@@ -6,6 +6,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.*
 import com.manuel.tutalleraunclic.ui.screens.home.HomeScreen
 import com.manuel.tutalleraunclic.ui.screens.login.LoginScreen
+import com.manuel.tutalleraunclic.ui.screens.register.RegisterScreen
 import com.manuel.tutalleraunclic.utils.TokenManager
 
 @Composable
@@ -25,8 +26,16 @@ fun AppNavGraph(navController: NavHostController) {
             LoginScreen(navController)
         }
 
+        composable("register") {
+            RegisterScreen(navController)
+        }
+
         composable("home") {
             HomeScreen(navController)
+        }
+
+        composable("crear_establecimiento") {
+            // Aquí irá tu pantalla de creación
         }
     }
 }

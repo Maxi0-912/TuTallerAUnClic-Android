@@ -3,37 +3,39 @@ package com.manuel.tutalleraunclic.viewmodel
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.manuel.tutalleraunclic.data.model.LoginRequest
+import com.manuel.tutalleraunclic.data.model.RegisterRequest
 import com.manuel.tutalleraunclic.data.remote.RetrofitClient
 import com.manuel.tutalleraunclic.data.repository.MainRepository
 import kotlinx.coroutines.launch
 
-class LoginViewModel(application: Application) : AndroidViewModel(application) {
+class RegisterViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository = MainRepository(RetrofitClient.api)
 
-    fun login(
+    fun register(
         username: String,
+        email: String,
         password: String,
-        onResult: (Boolean, String?) -> Unit
+        onResult: (Boolean) -> Unit
     ) {
-
         viewModelScope.launch {
             try {
-
-                val response = repository.login(
-                    LoginRequest(username, password)
+                val request = RegisterRequest(
+                    username = username,
+                    email = email,
+                    password = password
                 )
 
+                val response = repository.register(request)
+
                 if (response.isSuccessful) {
-                    val token = response.body()?.access
-                    onResult(true, token)
+                    onResult(true)
                 } else {
-                    onResult(false, null)
+                    onResult(false)
                 }
 
             } catch (e: Exception) {
-                onResult(false, null)
+                onResult(false)
             }
         }
     }

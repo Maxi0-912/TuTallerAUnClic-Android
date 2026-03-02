@@ -4,12 +4,13 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.manuel.tutalleraunclic.data.model.LoginRequest
+import com.manuel.tutalleraunclic.data.remote.RetrofitClient
 import com.manuel.tutalleraunclic.data.repository.MainRepository
 import kotlinx.coroutines.launch
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val repository = MainRepository(application)
+    private val repository = MainRepository(RetrofitClient.api)
 
     fun login(
         username: String,

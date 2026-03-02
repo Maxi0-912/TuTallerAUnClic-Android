@@ -1,33 +1,45 @@
 package com.manuel.tutalleraunclic.data.remote
 
-import retrofit2.http.*
 import retrofit2.Response
-import com.manuel.tutalleraunclic.data.model.LoginRequest
-import com.manuel.tutalleraunclic.data.model.LoginResponse
-import com.manuel.tutalleraunclic.data.model.Vehiculo
-import com.manuel.tutalleraunclic.data.model.Establecimiento
-import com.manuel.tutalleraunclic.data.model.CrearCitaRequest
+import retrofit2.http.*
+import com.manuel.tutalleraunclic.data.model.*
 
 interface ApiService {
 
-    @POST("auth/login/")
+    // ======================
+    // AUTH
+    // ======================
+
+    @POST("usuarios/login/")
     suspend fun login(
         @Body request: LoginRequest
     ): Response<LoginResponse>
 
-    @GET("establecimientos/")
-    suspend fun getEstablecimientos(
-        @Header("Authorization") token: String
-    ): List<Establecimiento>
+    @POST("usuarios/register/")
+    suspend fun register(
+        @Body request: RegisterRequest
+    ): Response<Unit>
 
-    @GET("vehiculos/")
-    suspend fun misVehiculos(
-        @Header("Authorization") token: String
-    ): List<Vehiculo>
+    // ======================
+    // ESTABLECIMIENTOS
+    // ======================
+
+    @GET("establecimientos/")
+    suspend fun getEstablecimientos(): Response<List<Establecimiento>>
+
+    // ======================
+    // VEHÍCULOS
+    // ======================
+
+    @GET("usuarios/vehiculos/")
+    suspend fun misVehiculos(): Response<List<Vehiculo>>
+
+    // ======================
+    // CITAS
+    // ======================
 
     @POST("citas/crear/")
     suspend fun crearCita(
-        @Header("Authorization") token: String,
         @Body request: CrearCitaRequest
     ): Response<Unit>
 }

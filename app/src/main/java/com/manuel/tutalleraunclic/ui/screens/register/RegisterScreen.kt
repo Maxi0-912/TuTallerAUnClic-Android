@@ -1,4 +1,4 @@
-package com.manuel.tutalleraunclic.ui.screens.login
+package com.manuel.tutalleraunclic.ui.screens.register
 
 import android.widget.Toast
 import androidx.compose.foundation.background
@@ -14,16 +14,16 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.manuel.tutalleraunclic.utils.TokenManager
-import com.manuel.tutalleraunclic.viewmodel.MainViewModel
+import com.manuel.tutalleraunclic.viewmodel.RegisterViewModel
 
 @Composable
-fun LoginScreen(navController: NavController) {
+fun RegisterScreen(navController: NavController) {
 
     val context = LocalContext.current
-    val viewModel: MainViewModel = viewModel()
+    val viewModel: RegisterViewModel = viewModel()
 
     var username by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var loading by remember { mutableStateOf(false) }
 
@@ -33,9 +33,8 @@ fun LoginScreen(navController: NavController) {
             .background(
                 Brush.verticalGradient(
                     listOf(
-                        Color(0xFF0F2027),
-                        Color(0xFF203A43),
-                        Color(0xFF2C5364)
+                        Color(0xFF141E30),
+                        Color(0xFF243B55)
                     )
                 )
             ),
@@ -55,7 +54,7 @@ fun LoginScreen(navController: NavController) {
             ) {
 
                 Text(
-                    text = "Tu Taller A Un Clic",
+                    text = "Crear Cuenta",
                     style = MaterialTheme.typography.titleLarge
                 )
 
@@ -63,6 +62,14 @@ fun LoginScreen(navController: NavController) {
                     value = username,
                     onValueChange = { username = it },
                     label = { Text("Usuario") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+
+                OutlinedTextField(
+                    value = email,
+                    onValueChange = { email = it },
+                    label = { Text("Correo electrónico") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
@@ -79,7 +86,7 @@ fun LoginScreen(navController: NavController) {
                 Button(
                     onClick = {
 
-                        if (username.isBlank() || password.isBlank()) {
+                        if (username.isBlank() || email.isBlank() || password.isBlank()) {
                             Toast.makeText(
                                 context,
                                 "Completa todos los campos",
@@ -90,22 +97,22 @@ fun LoginScreen(navController: NavController) {
 
                         loading = true
 
-                        viewModel.login(username, password) { success, token ->
+                        viewModel.register(username, email, password) { success ->
 
                             loading = false
 
-                            if (success && token != null) {
+                            if (success) {
+                                Toast.makeText(
+                                    context,
+                                    "Registro exitoso",
+                                    Toast.LENGTH_SHORT
+                                ).show()
 
-                                TokenManager.saveToken(context, token)
-
-                                navController.navigate("home") {
-                                    popUpTo("login") { inclusive = true }
-                                }
-
+                                navController.popBackStack()
                             } else {
                                 Toast.makeText(
                                     context,
-                                    "Credenciales inválidas",
+                                    "Error al registrarse",
                                     Toast.LENGTH_SHORT
                                 ).show()
                             }
@@ -121,17 +128,17 @@ fun LoginScreen(navController: NavController) {
                             strokeWidth = 2.dp
                         )
                     } else {
-                        Text("Ingresar")
+                        Text("Registrarse")
                     }
                 }
 
                 TextButton(
                     onClick = {
-                        navController.navigate("register")
+                        navController.popBackStack()
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("¿No tienes cuenta? Regístrate")
+                    Text("¿Ya tienes cuenta? Inicia sesión")
                 }
             }
         }
