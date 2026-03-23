@@ -4,7 +4,8 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.navigation.compose.rememberNavController
-import com.manuel.tutalleraunclic.ui.navigation.AppNavGraph
+import com.manuel.tutalleraunclic.core.navigation.AppNavigation
+import com.manuel.tutalleraunclic.core.navigation.Routes
 import com.manuel.tutalleraunclic.ui.theme.TuTallerAUnClicTheme
 
 class MainActivity : ComponentActivity() {
@@ -13,9 +14,14 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         setContent {
+
             TuTallerAUnClicTheme {
+
                 val navController = rememberNavController()
-                AppNavGraph(navController)
+
+                AppNavigation(
+                    navController = navController
+                )
             }
         }
     }

@@ -3,14 +3,17 @@ package com.manuel.tutalleraunclic.viewmodel
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.manuel.tutalleraunclic.data.model.RegisterRequest
-import com.manuel.tutalleraunclic.data.remote.RetrofitClient
+import com.manuel.tutalleraunclic.data.model.request.RegisterRequest
+import com.manuel.tutalleraunclic.data.network.ApiService
+import com.manuel.tutalleraunclic.data.network.RetrofitClient
 import com.manuel.tutalleraunclic.data.repository.MainRepository
 import kotlinx.coroutines.launch
 
 class RegisterViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val repository = MainRepository(RetrofitClient.api)
+    private val repository = MainRepository(
+        apiService = RetrofitClient.getApi()
+    )
 
     fun register(
         username: String,
@@ -20,6 +23,7 @@ class RegisterViewModel(application: Application) : AndroidViewModel(application
     ) {
         viewModelScope.launch {
             try {
+
                 val request = RegisterRequest(
                     username = username,
                     email = email,
@@ -31,10 +35,12 @@ class RegisterViewModel(application: Application) : AndroidViewModel(application
                 if (response.isSuccessful) {
                     onResult(true)
                 } else {
+                    println("Error: ${response.errorBody()?.string()}")
                     onResult(false)
                 }
 
             } catch (e: Exception) {
+                e.printStackTrace()
                 onResult(false)
             }
         }

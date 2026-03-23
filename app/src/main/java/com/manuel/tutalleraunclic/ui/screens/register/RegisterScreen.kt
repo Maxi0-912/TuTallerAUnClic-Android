@@ -20,7 +20,11 @@ import com.manuel.tutalleraunclic.viewmodel.RegisterViewModel
 fun RegisterScreen(navController: NavController) {
 
     val context = LocalContext.current
-    val viewModel: RegisterViewModel = viewModel()
+
+    val viewModel: RegisterViewModel = viewModel(
+        factory = androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory
+            .getInstance(context.applicationContext as android.app.Application)
+    )
 
     var username by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }

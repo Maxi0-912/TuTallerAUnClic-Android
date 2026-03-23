@@ -1,139 +1,104 @@
 package com.manuel.tutalleraunclic.ui.screens.login
 
-import android.widget.Toast
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
+import com.manuel.tutalleraunclic.ui.components.LogoApp
+import com.manuel.tutalleraunclic.core.navigation.Routes
 import androidx.compose.runtime.*
-import androidx.compose.ui.*
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.material3.*
+import androidx.compose.foundation.layout.*
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.manuel.tutalleraunclic.utils.TokenManager
-import com.manuel.tutalleraunclic.viewmodel.MainViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.ui.platform.LocalContext
+
+import com.manuel.tutalleraunclic.viewmodel.LoginViewModel
+import com.manuel.tutalleraunclic.data.local.TokenManager
+import com.manuel.tutalleraunclic.data.model.response.LoginResponse
 
 @Composable
 fun LoginScreen(navController: NavController) {
 
     val context = LocalContext.current
-    val viewModel: MainViewModel = viewModel()
+
+    val viewModel: LoginViewModel = viewModel()
 
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var loading by remember { mutableStateOf(false) }
 
-    Box(
+    val loginResult by viewModel.loginResult.observeAsState()
+
+    Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    listOf(
-                        Color(0xFF0F2027),
-                        Color(0xFF203A43),
-                        Color(0xFF2C5364)
-                    )
-                )
-            ),
-        contentAlignment = Alignment.Center
+            .padding(24.dp),
+        verticalArrangement = Arrangement.Center
     ) {
 
-        Card(
-            shape = RoundedCornerShape(20.dp),
-            modifier = Modifier
-                .padding(24.dp)
-                .fillMaxWidth()
+        Text(
+            text = "Iniciar Sesión",
+            style = MaterialTheme.typography.headlineMedium
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        TextField(
+            value = username,
+            onValueChange = { username = it },
+            label = { Text("Usuario") },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        TextField(
+            value = password,
+            onValueChange = { password = it },
+            label = { Text("Contraseña") },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Button(
+            onClick = {
+                viewModel.login(username, password)
+            },
+            modifier = Modifier.fillMaxWidth()
         ) {
 
-            Column(
-                modifier = Modifier.padding(24.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
+            Text("Ingresar")
 
-                Text(
-                    text = "Tu Taller A Un Clic",
-                    style = MaterialTheme.typography.titleLarge
-                )
+        }
 
-                OutlinedTextField(
-                    value = username,
-                    onValueChange = { username = it },
-                    label = { Text("Usuario") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
+        Spacer(modifier = Modifier.height(16.dp))
 
-                OutlinedTextField(
-                    value = password,
-                    onValueChange = { password = it },
-                    label = { Text("Contraseña") },
-                    visualTransformation = PasswordVisualTransformation(),
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
+        TextButton(
+            onClick = {
 
-                Button(
-                    onClick = {
+                navController.navigate(Routes.REGISTER)
 
-                        if (username.isBlank() || password.isBlank()) {
-                            Toast.makeText(
-                                context,
-                                "Completa todos los campos",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                            return@Button
-                        }
+            }
+        ) {
 
-                        loading = true
+            Text("Crear cuenta")
 
-                        viewModel.login(username, password) { success, token ->
+        }
 
-                            loading = false
+        loginResult?.let {
 
-                            if (success && token != null) {
+            LaunchedEffect(it) {
 
-                                TokenManager.saveToken(context, token)
+                val tokenManager = TokenManager(context)
 
-                                navController.navigate("home") {
-                                    popUpTo("login") { inclusive = true }
-                                }
+                // guardar token
+                tokenManager.saveToken(it.access)
 
-                            } else {
-                                Toast.makeText(
-                                    context,
-                                    "Credenciales inválidas",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-
-                    if (loading) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp),
-                            strokeWidth = 2.dp
-                        )
-                    } else {
-                        Text("Ingresar")
-                    }
-                }
-
-                TextButton(
-                    onClick = {
-                        navController.navigate("register")
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("¿No tienes cuenta? Regístrate")
+                navController.navigate(Routes.ESTABLECIMIENTOS) {
+                    popUpTo(Routes.LOGIN) { inclusive = true }
                 }
             }
         }
     }
+
 }

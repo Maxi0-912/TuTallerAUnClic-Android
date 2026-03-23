@@ -1,27 +1,19 @@
-# Gradle
+# Android
 .gradle/
 build/
-**/build/
-
-# Local configuration
 local.properties
-
-# IDE
 .idea/
 *.iml
 
-# Kotlin
-.kotlin/
+# Python / Django
+__pycache__/
+*.pyc
+db.sqlite3
+.env
+
+# Media
+media/
+staticfiles/
 
 # Logs
 *.log
-hs_err_pid*
-
-# Android Studio
-captures/
-.externalNativeBuild/
-.cxx/
-
-# OS
-.DS_Store
-Thumbs.db
