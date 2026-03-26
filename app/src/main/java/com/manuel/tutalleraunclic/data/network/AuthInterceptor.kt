@@ -3,21 +3,32 @@ package com.manuel.tutalleraunclic.data.network
 import com.manuel.tutalleraunclic.data.local.TokenManager
 import okhttp3.Interceptor
 import okhttp3.Response
-import android.content.Context
 
-class AuthInterceptor(private val context: Context) : Interceptor {
+class AuthInterceptor(
+    private val tokenManager: TokenManager
+) : Interceptor {
 
     override fun intercept(chain: Interceptor.Chain): Response {
 
-        val tokenManager = TokenManager(context)
+        val originalRequest = chain.request()
+
         val token = tokenManager.getToken()
 
-        val request = chain.request().newBuilder()
+        val requestBuilder = originalRequest.newBuilder()
 
-        token?.let {
-            request.addHeader("Authorization", "Bearer $it")
+        // 🔐 Solo agregar token si existe
+        if (!token.isNullOrEmpty()) {
+            requestBuilder.addHeader("Authorization", "Bearer $token")
         }
 
-        return chain.proceed(request.build())
+        val response = chain.proceed(requestBuilder.build())
+
+        // ⚠️ Manejo básico de expiración
+        if (response.code == 401) {
+            // Aquí puedes limpiar sesión si quieres
+            tokenManager.clearToken()
+        }
+
+        return response
     }
 }

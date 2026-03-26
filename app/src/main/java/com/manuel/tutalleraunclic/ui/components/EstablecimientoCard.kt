@@ -1,85 +1,59 @@
 package com.manuel.tutalleraunclic.ui.components
 
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.layout.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.draw.clip
 import coil.compose.AsyncImage
+
+import com.manuel.tutalleraunclic.data.model.EstablecimientoUI
 
 @Composable
 fun EstablecimientoCard(
-    nombre: String,
-    calificacion: String,
-    direccion: String,
-    imagen: String,
-    onClick: () -> Unit
+    establecimiento: EstablecimientoUI,
+    onClick: () -> Unit,
+    onAgendarClick: () -> Unit
 ) {
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp),
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(6.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        )
+            .padding(8.dp),
+        onClick = onClick
     ) {
 
         Column {
 
             AsyncImage(
-                model = if (imagen.isNotEmpty()) imagen else "https://picsum.photos/400",
-                contentDescription = nombre,
+                model = establecimiento.imagen,
+                contentDescription = null,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(160.dp)
-                    .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
+                    .height(180.dp)
             )
 
-            Column(
-                modifier = Modifier.padding(16.dp)
-            ) {
+            Column(modifier = Modifier.padding(12.dp)) {
 
                 Text(
-                    text = nombre,
+                    text = establecimiento.nombre,
                     style = MaterialTheme.typography.titleMedium
                 )
 
-                Spacer(modifier = Modifier.height(4.dp))
-
                 Text(
-                    text = "📍 $direccion",
-                    style = MaterialTheme.typography.bodyMedium
+                    text = establecimiento.direccion,
+                    style = MaterialTheme.typography.bodySmall
                 )
 
-                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    text = "⭐ ${establecimiento.calificacion}"
+                )
 
-                Row {
+                Spacer(modifier = Modifier.height(8.dp))
 
-                    Icon(
-                        imageVector = Icons.Default.Star,
-                        contentDescription = "Calificación",
-                        tint = Color(0xFFFFC107)
-                    )
-
-                    Spacer(modifier = Modifier.width(4.dp))
-
-                    Text(text = calificacion)
-
-                }
-
-                Spacer(modifier = Modifier.height(10.dp))
-
+                // 🔥 BOTÓN AGENDAR
                 Button(
-                    onClick = onClick,
+                    onClick = onAgendarClick,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("Agendar cita")

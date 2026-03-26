@@ -2,6 +2,8 @@ package com.manuel.tutalleraunclic.core.navigation
 
 object Routes {
 
+
+
     const val LOGIN = "login"
     const val REGISTER = "register"
 
@@ -11,7 +13,11 @@ object Routes {
     const val PERFIL = "perfil"
 
     const val DETALLE_ESTABLECIMIENTO = "detalle_establecimiento/{id}"
+
     const val CREAR_CITA = "crear_cita"
+    const val CITA = "cita"
+
+    const val EDITAR_PERFIL = "editar_perfil"
 
     fun detalleEstablecimiento(id: Int) = "detalle_establecimiento/$id"
 }

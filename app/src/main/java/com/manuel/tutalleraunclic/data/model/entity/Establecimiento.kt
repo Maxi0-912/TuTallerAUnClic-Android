@@ -1,10 +1,11 @@
 package com.manuel.tutalleraunclic.data.model.entity
 
+import android.R
 import com.manuel.tutalleraunclic.data.model.entity.TipoEstablecimiento
 
 data class Establecimiento(
 
-    val id: Int,
+    val id: R.string,
     val nombre: String,
     val direccion: String,
     val telefono: String,
@@ -14,5 +15,6 @@ data class Establecimiento(
     val latitud: String,   // 🔥 viene como string
     val longitud: String,  // 🔥 viene como string
     val propietario: Int,  // 🔥 ID
-    val tipo: Int          // 🔥 ID
+    val tipo: Int,
+    val calificacion: Double,// 🔥 ID
 )

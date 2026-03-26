@@ -1,5 +1,5 @@
 package com.manuel.tutalleraunclic.ui.screens.establecimientos
-
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -10,61 +10,47 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-
 import com.manuel.tutalleraunclic.viewmodel.ServiciosViewModel
-import com.manuel.tutalleraunclic.data.model.entity.Servicio
 import com.manuel.tutalleraunclic.ui.components.ServicioCard
 
 @Composable
 fun DetalleEstablecimientoScreen(
-    establecimientoId: Int,
-    navController: NavController,
-    viewModel: ServiciosViewModel = viewModel()
+    id: String,
+    viewModel: ServiciosViewModel = hiltViewModel()
 ) {
 
-    val servicios by viewModel.servicios.observeAsState(emptyList())
+    val establecimientoId = id.toIntOrNull() ?: return
+
+    val servicios by viewModel.servicios.collectAsState()
 
     LaunchedEffect(establecimientoId) {
         viewModel.cargarServicios(establecimientoId)
     }
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
+        modifier = Modifier.padding(16.dp)
     ) {
+
+        Text(
+            text = "Detalle del establecimiento: $id",
+            style = MaterialTheme.typography.headlineSmall
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
 
         Text(
             text = "Servicios disponibles",
             style = MaterialTheme.typography.headlineMedium
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
-        LazyColumn {
+        servicios.forEach { servicio ->
 
-            items(servicios) { servicio ->
-
-                ServicioCard(servicio = servicio)
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Button(
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = {
-
-                        val servicioId = servicio.id ?: return@Button
-
-                        navController.navigate(
-                            "crear_cita/$establecimientoId/$servicioId"
-                        )
-                    }
-                ) {
-                    Text("Agendar cita")
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-            }
+            Text(
+                text = servicio.nombre, // 👈 asegúrate que existe este campo
+                modifier = Modifier.padding(8.dp)
+            )
         }
     }
 }

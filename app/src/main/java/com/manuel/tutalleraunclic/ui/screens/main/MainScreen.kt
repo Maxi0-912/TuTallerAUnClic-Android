@@ -10,12 +10,15 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.navigation.NavController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.rememberNavController
 import com.manuel.tutalleraunclic.core.navigation.Routes
-import com.manuel.tutalleraunclic.ui.screens.establecimientos.EstablecimientosScreen
+import com.manuel.tutalleraunclic.core.navigation.mainGraph
 
 @Composable
-fun MainScreen(navController: NavController) {
+fun MainScreen() {
+
+    val navController = rememberNavController()
 
     Scaffold(
 
@@ -23,7 +26,7 @@ fun MainScreen(navController: NavController) {
             NavigationBar {
 
                 NavigationBarItem(
-                    selected = true,
+                    selected = false,
                     onClick = {
                         navController.navigate(Routes.ESTABLECIMIENTOS) {
                             popUpTo(Routes.ESTABLECIMIENTOS)
@@ -79,11 +82,17 @@ fun MainScreen(navController: NavController) {
 
     ) { padding ->
 
-        // 🔥 USO CORRECTO DEL PADDING (evita que se tape con el menú)
         Box(
             modifier = Modifier.padding(padding)
         ) {
-            EstablecimientosScreen(navController)
+
+            // 🔥 AQUÍ VA LA NAVEGACIÓN REAL
+            NavHost(
+                navController = navController,
+                startDestination = Routes.ESTABLECIMIENTOS
+            ) {
+                mainGraph(navController)
+            }
         }
     }
 }

@@ -1,35 +1,34 @@
 package com.manuel.tutalleraunclic.viewmodel
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.manuel.tutalleraunclic.data.model.entity.Cita
-import com.manuel.tutalleraunclic.data.network.RetrofitClient
 import com.manuel.tutalleraunclic.data.repository.MainRepository
-import com.manuel.tutalleraunclic.data.local.TokenManager
-import com.manuel.tutalleraunclic.data.network.ApiService
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class MisCitasViewModel(application: Application) : AndroidViewModel(application) {
+@HiltViewModel
+class MisCitasViewModel @Inject constructor(
+    private val repository: MainRepository
+) : ViewModel() {
 
-    private val repository = MainRepository(
-        apiService = RetrofitClient.getApi()
-    )
-    private val tokenManager = TokenManager(application)
-
-    val citas = MutableLiveData<List<Cita>>()
+    private val _citas = MutableStateFlow<List<Cita>>(emptyList())
+    val citas: StateFlow<List<Cita>> = _citas
 
     fun cargarCitas() {
-
         viewModelScope.launch {
+            try {
+                val response = repository.misCitas()
 
-            val token = tokenManager.getToken() ?: return@launch
+                if (response.isSuccessful) {
+                    _citas.value = response.body() ?: emptyList()
+                }
 
-            val response = repository.misCitas(token)
-
-            if (response.isSuccessful) {
-                citas.value = response.body()
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
         }
     }

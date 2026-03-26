@@ -1,27 +1,26 @@
 package com.manuel.tutalleraunclic.ui.screens.login
 
-import com.manuel.tutalleraunclic.ui.components.LogoApp
-import com.manuel.tutalleraunclic.core.navigation.Routes
 import androidx.compose.runtime.*
 import androidx.compose.material3.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.platform.LocalContext
+import androidx.hilt.navigation.compose.hiltViewModel
 
+import com.manuel.tutalleraunclic.core.navigation.Routes
 import com.manuel.tutalleraunclic.viewmodel.LoginViewModel
 import com.manuel.tutalleraunclic.data.local.TokenManager
-import com.manuel.tutalleraunclic.data.model.response.LoginResponse
 
 @Composable
-fun LoginScreen(navController: NavController) {
+fun LoginScreen(
+    navController: NavController,
+    viewModel: LoginViewModel = hiltViewModel()
+) {
 
     val context = LocalContext.current
-
-    val viewModel: LoginViewModel = viewModel()
 
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -35,63 +34,36 @@ fun LoginScreen(navController: NavController) {
         verticalArrangement = Arrangement.Center
     ) {
 
-        Text(
-            text = "Iniciar Sesión",
-            style = MaterialTheme.typography.headlineMedium
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
+        Text("Iniciar Sesión")
 
         TextField(
             value = username,
             onValueChange = { username = it },
-            label = { Text("Usuario") },
-            modifier = Modifier.fillMaxWidth()
+            label = { Text("Usuario") }
         )
-
-        Spacer(modifier = Modifier.height(16.dp))
 
         TextField(
             value = password,
             onValueChange = { password = it },
-            label = { Text("Contraseña") },
-            modifier = Modifier.fillMaxWidth()
+            label = { Text("Contraseña") }
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Button(
-            onClick = {
-                viewModel.login(username, password)
-            },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-
+        Button(onClick = {
+            viewModel.login(username, password)
+        }) {
             Text("Ingresar")
-
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        TextButton(
-            onClick = {
-
-                navController.navigate(Routes.REGISTER)
-
-            }
-        ) {
-
+        TextButton(onClick = {
+            navController.navigate(Routes.REGISTER)
+        }) {
             Text("Crear cuenta")
-
         }
 
         loginResult?.let {
-
             LaunchedEffect(it) {
 
-                val tokenManager = TokenManager(context)
-
-                // guardar token
+                val tokenManager = TokenManager(context.applicationContext)
                 tokenManager.saveToken(it.access)
 
                 navController.navigate(Routes.ESTABLECIMIENTOS) {
@@ -100,5 +72,4 @@ fun LoginScreen(navController: NavController) {
             }
         }
     }
-
 }

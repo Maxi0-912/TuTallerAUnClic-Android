@@ -10,36 +10,38 @@ import com.manuel.tutalleraunclic.ui.screens.mapa.MapScreen
 import com.manuel.tutalleraunclic.ui.screens.perfil.PerfilScreen
 import com.manuel.tutalleraunclic.ui.screens.establecimientos.EstablecimientosScreen
 import com.manuel.tutalleraunclic.ui.screens.establecimientos.DetalleEstablecimientoScreen
-
+import androidx.lifecycle.viewmodel.compose.viewModel
+import  com.manuel.tutalleraunclic.viewmodel.EstablecimientoViewModel
 fun NavGraphBuilder.mainGraph(navController: NavHostController) {
 
+    // 🔹 ESTABLECIMIENTOS (pantalla principal interna)
     composable(Routes.ESTABLECIMIENTOS) {
-        MainScreen(navController)
+        val viewModel: EstablecimientoViewModel = viewModel()
+        EstablecimientosScreen(navController, viewModel)
     }
 
-    composable(Routes.ESTABLECIMIENTOS) {
-        EstablecimientosScreen(navController)
-    }
-
+    // 🔹 MIS CITAS
     composable(Routes.MIS_CITAS) {
         MisCitasScreen(navController)
     }
 
+    // 🔹 MAPA
     composable(Routes.MAPA) {
         MapScreen()
     }
 
-    composable(Routes.PERFIL) {
-        PerfilScreen()
-    }
+    // 🔹 DETALLE ESTABLECIMIENTO
+    composable("detalle_establecimiento/{id}") { backStackEntry ->
 
-    composable(Routes.DETALLE_ESTABLECIMIENTO) {
+        val id = backStackEntry.arguments?.getString("id") ?: ""
+
         DetalleEstablecimientoScreen(
-            navController = navController,
-            establecimientoId = 1
+            id = id,
+
         )
     }
 
+    // 🔹 CREAR CITA
     composable(Routes.CREAR_CITA) {
         CrearCitaScreen(
             navController = navController,
@@ -48,4 +50,17 @@ fun NavGraphBuilder.mainGraph(navController: NavHostController) {
         )
     }
 
+    // 🔹 PERFIL
+    composable(Routes.PERFIL) {
+        PerfilScreen(
+            onNavigateToLogin = {
+                navController.navigate(Routes.LOGIN) {
+                    popUpTo(0) // limpia todo el stack (logout real)
+                }
+            },
+            onNavigateToEditarPerfil = {
+                navController.navigate(Routes.EDITAR_PERFIL)
+            }
+        )
+    }
 }

@@ -1,37 +1,37 @@
 package com.manuel.tutalleraunclic.viewmodel
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.manuel.tutalleraunclic.data.model.entity.Servicio
-import com.manuel.tutalleraunclic.data.network.ApiService
-import com.manuel.tutalleraunclic.data.network.RetrofitClient
 import com.manuel.tutalleraunclic.data.repository.MainRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class ServiciosViewModel(application: Application) : AndroidViewModel(application) {
+@HiltViewModel
+class ServiciosViewModel @Inject constructor(
+    private val repository: MainRepository
+) : ViewModel() {
 
-    private val repository = MainRepository(
-        apiService = RetrofitClient.getApi()
-    )
-
-    val servicios = MutableLiveData<List<Servicio>>()
+    private val _servicios = MutableStateFlow<List<Servicio>>(emptyList())
+    val servicios: StateFlow<List<Servicio>> = _servicios
 
     fun cargarServicios(establecimientoId: Int) {
 
         viewModelScope.launch {
 
-            val response = repository.getServicios(establecimientoId)
+            try {
+                val response = repository.getServicios(establecimientoId)
 
-            if (response.isSuccessful) {
+                if (response.isSuccessful) {
+                    _servicios.value = response.body() ?: emptyList()
+                }
 
-                servicios.value = response.body()
-
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
-
         }
-
     }
-
 }

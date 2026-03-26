@@ -1,28 +1,10 @@
 package com.manuel.tutalleraunclic.data.network
 
-import com.manuel.tutalleraunclic.data.model.entity.Calificacion
-import com.manuel.tutalleraunclic.data.model.request.CalificacionRequest
-import com.manuel.tutalleraunclic.data.model.entity.Cita
-import com.manuel.tutalleraunclic.data.model.request.CitaRequest
-import com.manuel.tutalleraunclic.data.model.request.CrearCitaRequest
-import com.manuel.tutalleraunclic.data.model.entity.Dashboard
-import com.manuel.tutalleraunclic.data.model.entity.Establecimiento
-import com.manuel.tutalleraunclic.data.model.request.EstadoRequest
-import com.manuel.tutalleraunclic.data.model.request.LoginRequest
+import com.manuel.tutalleraunclic.data.model.entity.*
+import com.manuel.tutalleraunclic.data.model.request.*
 import com.manuel.tutalleraunclic.data.model.response.LoginResponse
-import com.manuel.tutalleraunclic.data.model.entity.Notificacion
-import com.manuel.tutalleraunclic.data.model.request.RegisterRequest
-import com.manuel.tutalleraunclic.data.model.entity.Servicio
-import com.manuel.tutalleraunclic.data.model.entity.Usuario
-import com.manuel.tutalleraunclic.data.model.entity.Vehiculo
-import com.manuel.tutalleraunclic.data.model.request.VehiculoRequest
 import retrofit2.Response
-import retrofit2.http.Body
-import retrofit2.http.GET
-import retrofit2.http.Header
-import retrofit2.http.PATCH
-import retrofit2.http.POST
-import retrofit2.http.Path
+import retrofit2.http.*
 
 interface ApiService {
 
@@ -30,40 +12,53 @@ interface ApiService {
     // 🔐 AUTH
     // ==========================
 
-    @POST("usuarios/login/")
+    @POST("auth/login/")
     suspend fun login(
         @Body request: LoginRequest
     ): Response<LoginResponse>
 
-
-    @POST("usuarios/register/")
+    @POST("auth/register/")
     suspend fun register(
         @Body request: RegisterRequest
-    ): Response<Void>
-
-
-    @GET("usuarios/perfil/")
-    suspend fun perfil(
-        @Header("Authorization") token: String
     ): Response<Usuario>
 
+    @GET("auth/perfil/")
+    suspend fun getPerfil(): Response<Usuario>
+
+    @PUT("auth/perfil/")
+    suspend fun actualizarPerfil(
+        @Body data: UpdateUserRequest
+    ): Response<Usuario>
+
+    @DELETE("auth/eliminar/")
+    suspend fun eliminarCuenta(): Response<Unit>
 
     // ==========================
-    // 🏢 ESTABLECIMIENTOS
+    // 🏢 ESTABLECIMIENTOS + GEO
     // ==========================
-
-    @GET("establecimientos/")
-    suspend fun getEstablecimientos():
-            Response<List<Establecimiento>>
-
-
     @GET("establecimientos/{id}/")
     suspend fun getDetalleEstablecimiento(
-
-        @Path("id") establecimientoId: Int
-
+        @Path("id") id: Int
     ): Response<Establecimiento>
 
+
+
+    @GET("recomendados/")
+    suspend fun getRecomendados(
+        @Query("lat") lat: String,
+        @Query("lng") lng: String
+    ): Response<List<Establecimiento>>
+
+    @GET("establecimientos/")
+    suspend fun getEstablecimientos(
+        @Query("lat") lat: Double,
+        @Query("lng") lng: Double
+    ): Response<List<Establecimiento>>
+
+    @POST("establecimientos/")
+    suspend fun crearEstablecimiento(
+        @Body request: EstablecimientoRequest
+    ): Response<Establecimiento>
 
     // ==========================
     // 🛠 SERVICIOS
@@ -71,77 +66,41 @@ interface ApiService {
 
     @GET("servicios/establecimiento/{id}/")
     suspend fun getServicios(
-
         @Path("id") establecimientoId: Int
-
     ): Response<List<Servicio>>
 
-
     // ==========================
-    // 🚗 VEHICULOS
+    // 🚗 VEHÍCULOS
     // ==========================
 
-    @GET("usuarios/vehiculos/")
-    suspend fun misVehiculos(
+    @GET("vehiculos/")
+    suspend fun misVehiculos(): Response<List<Vehiculo>>
 
-        @Header("Authorization") token: String
-
-    ): Response<List<Vehiculo>>
-
-
-    @POST("usuarios/vehiculos/crear/")
+    @POST("vehiculos/crear/")
     suspend fun crearVehiculo(
-
-        @Header("Authorization") token: String,
-        @Body vehiculo: VehiculoRequest
-
-    ): Response<Void>
-
+        @Body request: VehiculoRequest
+    ): Response<Vehiculo>
 
     // ==========================
     // 📅 CITAS
     // ==========================
 
-    @POST("citas/crear/")
+    @POST("citas/")
     suspend fun crearCita(
-
-        @Header("Authorization") token: String,
-        @Body cita: CitaRequest
-
-    ): Response<Void>
-
-
-
-
-    @GET("citas/mis/")
-    suspend fun misCitas(
-        @Header("Authorization") token: String
-    ): Response<List<Cita>>
-
-    @POST("citas/crear/")
-    suspend fun crearCita(
-        @Body cita: CrearCitaRequest
+        @Body request: CrearCitaRequest
     ): Response<Cita>
 
+    @GET("citas/mis/")
+    suspend fun misCitas(): Response<List<Cita>>
 
-    @GET("citas/empresa/{establecimiento_id}/")
-    suspend fun citasEmpresa(
-
-        @Header("Authorization") token: String,
-        @Path("establecimiento_id") establecimientoId: Int
-
-    ): Response<List<Cita>>
-
+    @GET("citas/empresa/")
+    suspend fun citasEmpresa(): Response<List<Cita>>
 
     @PATCH("citas/{id}/estado/")
     suspend fun cambiarEstadoCita(
-
-        @Header("Authorization") token: String,
-        @Path("id") citaId: Int,
-        @Body estado: EstadoRequest
-
-    ): Response<Void>
-
+        @Path("id") id: Int,
+        @Body request: EstadoRequest
+    ): Response<Unit>
 
     // ==========================
     // ⭐ CALIFICACIONES
@@ -149,52 +108,30 @@ interface ApiService {
 
     @POST("calificaciones/crear/")
     suspend fun crearCalificacion(
-
-        @Header("Authorization") token: String,
-        @Body calificacion: CalificacionRequest
-
-    ): Response<Void>
-
+        @Body request: CalificacionRequest
+    ): Response<Unit>
 
     @GET("calificaciones/establecimiento/{id}/")
     suspend fun calificacionesEstablecimiento(
-
-        @Path("id") establecimientoId: Int
-
+        @Path("id") id: Int
     ): Response<List<Calificacion>>
-
 
     // ==========================
     // 🔔 NOTIFICACIONES
     // ==========================
 
     @GET("notificaciones/")
-    suspend fun misNotificaciones(
-
-        @Header("Authorization") token: String
-
-    ): Response<List<Notificacion>>
-
+    suspend fun misNotificaciones(): Response<List<Notificacion>>
 
     @PATCH("notificaciones/{id}/leida/")
     suspend fun marcarNotificacionLeida(
-
-        @Header("Authorization") token: String,
-        @Path("id") notificacionId: Int
-
-    ): Response<Void>
-
+        @Path("id") id: Int
+    ): Response<Unit>
 
     // ==========================
-    // 📊 DASHBOARD EMPRESA
+    // 📊 DASHBOARD
     // ==========================
 
-    @GET("citas/dashboard/{establecimiento_id}/")
-    suspend fun dashboardEmpresa(
-
-        @Header("Authorization") token: String,
-        @Path("establecimiento_id") establecimientoId: Int
-
-    ): Response<Dashboard>
-
+    @GET("dashboard/empresa/")
+    suspend fun dashboardEmpresa(): Response<Dashboard>
 }

@@ -1,23 +1,22 @@
 package com.manuel.tutalleraunclic.viewmodel
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.manuel.tutalleraunclic.data.model.request.LoginRequest
 import com.manuel.tutalleraunclic.data.model.response.LoginResponse
-import com.manuel.tutalleraunclic.data.network.RetrofitClient
 import com.manuel.tutalleraunclic.data.repository.MainRepository
-import com.manuel.tutalleraunclic.data.network.ApiService
-
 import com.manuel.tutalleraunclic.data.local.TokenManager
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.launch
 
-class LoginViewModel(application: Application) : AndroidViewModel(application) {
+@HiltViewModel
+class LoginViewModel @Inject constructor(
+    private val repository: MainRepository,
+    private val tokenManager: TokenManager
+) : ViewModel() {
 
-    private val repository = MainRepository(
-        apiService = RetrofitClient.getApi()
-    )
     val loginResult = MutableLiveData<LoginResponse?>()
 
     fun login(username: String, password: String) {
@@ -30,9 +29,7 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
                     val loginResponse = response.body()
 
                     loginResponse?.let {
-                        val tokenManager = TokenManager(getApplication())
                         tokenManager.saveToken(it.access)
-
                         loginResult.value = it
                     }
 

@@ -1,19 +1,17 @@
 package com.manuel.tutalleraunclic.viewmodel
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.manuel.tutalleraunclic.data.model.request.RegisterRequest
-import com.manuel.tutalleraunclic.data.network.ApiService
-import com.manuel.tutalleraunclic.data.network.RetrofitClient
 import com.manuel.tutalleraunclic.data.repository.MainRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class RegisterViewModel(application: Application) : AndroidViewModel(application) {
-
-    private val repository = MainRepository(
-        apiService = RetrofitClient.getApi()
-    )
+@HiltViewModel
+class RegisterViewModel @Inject constructor(
+    private val repository: MainRepository
+) : ViewModel() {
 
     fun register(
         username: String,
@@ -35,7 +33,6 @@ class RegisterViewModel(application: Application) : AndroidViewModel(application
                 if (response.isSuccessful) {
                     onResult(true)
                 } else {
-                    println("Error: ${response.errorBody()?.string()}")
                     onResult(false)
                 }
 
