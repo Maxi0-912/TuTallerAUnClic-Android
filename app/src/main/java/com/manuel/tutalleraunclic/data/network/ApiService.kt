@@ -64,6 +64,12 @@ interface ApiService {
     // 🛠 SERVICIOS
     // ==========================
 
+    @GET("agendas/{establecimiento_id}/")
+    suspend fun obtenerAgendas(
+        @Path("establecimiento_id") establecimientoId: Int,
+        @Query("fecha") fecha: String
+    ): List<Agenda>
+
     @GET("servicios/establecimiento/{id}/")
     suspend fun getServicios(
         @Path("id") establecimientoId: Int
@@ -88,10 +94,13 @@ interface ApiService {
     @POST("citas/")
     suspend fun crearCita(
         @Body request: CrearCitaRequest
-    ): Response<Cita>
+    )
 
     @GET("citas/mis/")
     suspend fun misCitas(): Response<List<Cita>>
+
+    @GET("citas/")
+    suspend fun getCitas(): List<Cita>
 
     @GET("citas/empresa/")
     suspend fun citasEmpresa(): Response<List<Cita>>

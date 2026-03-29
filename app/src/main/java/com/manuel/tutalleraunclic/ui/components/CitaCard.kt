@@ -23,36 +23,27 @@ import com.manuel.tutalleraunclic.data.model.entity.Cita
 fun CitaCard(cita: Cita) {
 
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(8.dp),
-
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(6.dp)
     ) {
-
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
+        Column(modifier = Modifier.padding(16.dp)) {
 
             Text(
-                text = "Servicio: ${cita.servicio.nombre}",
+                text = "Servicio: ${cita.servicio}",
                 style = MaterialTheme.typography.titleMedium
             )
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            Text(
-                text = "Fecha: ${cita.fecha}"
-            )
+            Text(text = "Fecha: ${cita.fecha}")
+            Text(text = "Hora: ${cita.hora}")
 
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "Vehículo: ${cita.vehiculo.placa}"
+                text = "Estado: ${cita.estado}",
+                color = MaterialTheme.colorScheme.primary
             )
-
         }
-
     }
-
 }

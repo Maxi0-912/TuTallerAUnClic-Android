@@ -3,8 +3,9 @@ package com.manuel.tutalleraunclic.data.network
 import com.manuel.tutalleraunclic.data.local.TokenManager
 import okhttp3.Interceptor
 import okhttp3.Response
+import javax.inject.Inject
 
-class AuthInterceptor(
+class AuthInterceptor @Inject constructor(
     private val tokenManager: TokenManager
 ) : Interceptor {
 
@@ -12,21 +13,21 @@ class AuthInterceptor(
 
         val originalRequest = chain.request()
 
-        val token = tokenManager.getToken()
+        // ✅ Obtener token correctamente
+        val token = tokenManager.getAccessToken()
 
         val requestBuilder = originalRequest.newBuilder()
 
-        // 🔐 Solo agregar token si existe
+        // 🔐 Agregar token si existe
         if (!token.isNullOrEmpty()) {
             requestBuilder.addHeader("Authorization", "Bearer $token")
         }
 
         val response = chain.proceed(requestBuilder.build())
 
-        // ⚠️ Manejo básico de expiración
+        // ⚠️ Si falla por auth → limpiar sesión
         if (response.code == 401) {
-            // Aquí puedes limpiar sesión si quieres
-            tokenManager.clearToken()
+            tokenManager.clear()
         }
 
         return response

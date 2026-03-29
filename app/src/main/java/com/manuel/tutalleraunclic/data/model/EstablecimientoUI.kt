@@ -1,9 +1,11 @@
 package com.manuel.tutalleraunclic.data.model
 
 data class EstablecimientoUI(
-    val id: String,
+    val id: Int,
     val nombre: String,
+    val imagenUrl: String,
+    val rating: Double,
+    val totalReviews: Int,
     val direccion: String,
-    val calificacion: Double,
-    val imagen: String
+    val precioDesde: String
 )

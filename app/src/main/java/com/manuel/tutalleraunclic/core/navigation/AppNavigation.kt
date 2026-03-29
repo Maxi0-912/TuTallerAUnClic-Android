@@ -1,28 +1,20 @@
 package com.manuel.tutalleraunclic.core.navigation
 
-
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavType
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
+import androidx.navigation.compose.*
 import androidx.navigation.navArgument
-import androidx.navigation.NavHostController
-import androidx.compose.material3.Text
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.manuel.tutalleraunclic.ui.screens.perfil.PerfilScreen
-import com.manuel.tutalleraunclic.ui.screens.perfil.EditarPerfilScreen
-import com.manuel.tutalleraunclic.ui.screens.main.MainScreen
 import com.manuel.tutalleraunclic.ui.screens.login.LoginScreen
-import com.manuel.tutalleraunclic.ui.screens.establecimientos.DetalleEstablecimientoScreen
-import com.manuel.tutalleraunclic.viewmodel.EstablecimientoViewModel
-import com.manuel.tutalleraunclic.ui.screens.establecimientos.EstablecimientosScreen
 import com.manuel.tutalleraunclic.ui.screens.establecimientos.ListaEstablecimientosScreen
+import com.manuel.tutalleraunclic.ui.screens.establecimientos.DetalleEstablecimientoScreen
+import com.manuel.tutalleraunclic.ui.screens.citas.CrearCitaScreen
 import com.manuel.tutalleraunclic.viewmodel.LoginViewModel
-import  com.manuel.tutalleraunclic.ui.screens.citas.CrearCitaScreen
 
 @Composable
-fun AppNavigation(navController: NavHostController) {
+fun AppNavigation() {
+
+    val navController = rememberNavController()
 
     NavHost(
         navController = navController,
@@ -30,96 +22,62 @@ fun AppNavigation(navController: NavHostController) {
     ) {
 
         // 🔐 LOGIN
-        composable("login") {
-            LoginScreen(navController)
-        }
-
-
-        @Composable
-        fun LoginScreen() {
-            val viewModel: LoginViewModel = hiltViewModel()
-        }
-
-
         composable(Routes.LOGIN) {
-            LoginScreen(navController)
+            val viewModel: LoginViewModel = hiltViewModel()
+
+            LoginScreen(
+                navController = navController,
+                viewModel = viewModel
+            )
         }
 
-        // 🏠 MAIN
+        // 🏢 LISTA DE ESTABLECIMIENTOS
         composable(Routes.ESTABLECIMIENTOS) {
-            MainScreen()
-        }
-
-        // 🏢 LISTA
-        composable("lista_establecimientos") {
             ListaEstablecimientosScreen(navController)
         }
 
-        // 🏢 DETALLE (UNIFICADO)
+        // 📍 DETALLE (CON ARGUMENTO ID)
         composable(
-            route = "detalle_establecimiento/{id}",
+            route = Routes.DETALLE_ARG,
             arguments = listOf(
-                navArgument("id") { type = NavType.StringType }
+                navArgument("id") {
+                    type = NavType.StringType
+                }
             )
         ) { backStackEntry ->
 
-            val id = backStackEntry.arguments?.getString("id") ?: return@composable
+            val id = backStackEntry.arguments?.getString("id") ?: ""
 
             DetalleEstablecimientoScreen(
-                id = id
+                id = id,
+                navController = navController
             )
         }
 
-        // 📌 MIS CITAS
-        composable(Routes.MIS_CITAS) {
-            Text("Pantalla Mis Citas")
-        }
+        // 🔥 CREAR CITA (CON 2 ARGUMENTOS)
+        composable(
+            route = Routes.CITA_ARG,
+            arguments = listOf(
+                navArgument("establecimientoId") {
+                    type = NavType.IntType
+                },
+                navArgument("servicioId") {
+                    type = NavType.IntType
+                }
+            )
+        ) { backStackEntry ->
 
-        composable("${Routes.CITA}/{id}") { backStackEntry ->
+            val establecimientoId =
+                backStackEntry.arguments?.getInt("establecimientoId") ?: 0
 
-            val id = backStackEntry.arguments?.getString("id") ?: ""
-
-            Text("Agendar cita para ID: $id")
-        }
-
-        composable("${Routes.CITA}/{id}") { backStackEntry ->
-
-            val id = backStackEntry.arguments?.getString("id") ?: ""
+            val servicioId =
+                backStackEntry.arguments?.getInt("servicioId") ?: 0
 
             CrearCitaScreen(
                 navController = navController,
-                id = id
+                establecimientoId = establecimientoId,
+                servicioId = servicioId
             )
-        }
-
-
-        // 🗺 MAPA
-        composable(Routes.MAPA) {
-            Text("Pantalla Mapa")
-        }
-
-        // 👤 PERFIL
-
-
-
-
-
-        composable(Routes.PERFIL) {
-            PerfilScreen(
-                onNavigateToLogin = {
-                    navController.navigate(Routes.LOGIN) {
-                        popUpTo(Routes.PERFIL) { inclusive = true }
-                    }
-                },
-                onNavigateToEditarPerfil = {
-                    navController.navigate(Routes.EDITAR_PERFIL)
-                }
-            )
-        }
-
-        // ✏️ EDITAR PERFIL
-        composable(Routes.EDITAR_PERFIL) {
-            EditarPerfilScreen(navController)
         }
     }
 }

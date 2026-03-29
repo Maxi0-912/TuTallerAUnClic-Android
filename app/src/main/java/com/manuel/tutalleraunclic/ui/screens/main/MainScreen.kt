@@ -9,9 +9,10 @@ import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.rememberNavController
+import androidx.navigation.compose.*
+
 import com.manuel.tutalleraunclic.core.navigation.Routes
 import com.manuel.tutalleraunclic.core.navigation.mainGraph
 
@@ -20,13 +21,16 @@ fun MainScreen() {
 
     val navController = rememberNavController()
 
-    Scaffold(
+    // 🔥 Detectar ruta actual
+    val currentBackStack by navController.currentBackStackEntryAsState()
+    val currentRoute = currentBackStack?.destination?.route
 
+    Scaffold(
         bottomBar = {
             NavigationBar {
 
                 NavigationBarItem(
-                    selected = false,
+                    selected = currentRoute == Routes.ESTABLECIMIENTOS,
                     onClick = {
                         navController.navigate(Routes.ESTABLECIMIENTOS) {
                             popUpTo(Routes.ESTABLECIMIENTOS)
@@ -40,7 +44,7 @@ fun MainScreen() {
                 )
 
                 NavigationBarItem(
-                    selected = false,
+                    selected = currentRoute == Routes.MAPA,
                     onClick = {
                         navController.navigate(Routes.MAPA) {
                             launchSingleTop = true
@@ -53,7 +57,7 @@ fun MainScreen() {
                 )
 
                 NavigationBarItem(
-                    selected = false,
+                    selected = currentRoute == Routes.MIS_CITAS,
                     onClick = {
                         navController.navigate(Routes.MIS_CITAS) {
                             launchSingleTop = true
@@ -66,7 +70,7 @@ fun MainScreen() {
                 )
 
                 NavigationBarItem(
-                    selected = false,
+                    selected = currentRoute == Routes.PERFIL,
                     onClick = {
                         navController.navigate(Routes.PERFIL) {
                             launchSingleTop = true
@@ -86,7 +90,6 @@ fun MainScreen() {
             modifier = Modifier.padding(padding)
         ) {
 
-            // 🔥 AQUÍ VA LA NAVEGACIÓN REAL
             NavHost(
                 navController = navController,
                 startDestination = Routes.ESTABLECIMIENTOS

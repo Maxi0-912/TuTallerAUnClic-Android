@@ -9,23 +9,36 @@ class TokenManager @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
 
-    companion object {
-        private const val PREF_NAME = "auth_prefs"
-        private const val KEY_TOKEN = "access_token"
-    }
-
     private val prefs: SharedPreferences =
-        context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+        context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
 
-    fun saveToken(token: String) {
-        prefs.edit().putString(KEY_TOKEN, token).apply()
+    // 🔐 TOKENS
+    fun saveTokens(accessToken: String, refreshToken: String) {
+        prefs.edit()
+            .putString("access_token", accessToken)
+            .putString("refresh_token", refreshToken)
+            .apply()
     }
 
-    fun getToken(): String? {
-        return prefs.getString(KEY_TOKEN, null)
+    fun getAccessToken(): String? {
+        return prefs.getString("access_token", null)
     }
 
-    fun clearToken() {
-        prefs.edit().remove(KEY_TOKEN).apply()
+    fun getRefreshToken(): String? {
+        return prefs.getString("refresh_token", null)
+    }
+
+    // 👤 USER
+    fun saveUserId(userId: Int) {
+        prefs.edit().putInt("user_id", userId).apply()
+    }
+
+    fun getUserId(): Int {
+        return prefs.getInt("user_id", 0)
+    }
+
+    // 🧹 LOGOUT
+    fun clear() {
+        prefs.edit().clear().apply()
     }
 }

@@ -7,69 +7,70 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.ui.graphics.Color
 
 import com.manuel.tutalleraunclic.core.navigation.Routes
 import com.manuel.tutalleraunclic.viewmodel.LoginViewModel
-import com.manuel.tutalleraunclic.data.local.TokenManager
 
 @Composable
 fun LoginScreen(
-    navController: NavController,
-    viewModel: LoginViewModel = hiltViewModel()
+    viewModel: LoginViewModel,
+    navController: NavController
 ) {
-
-    val context = LocalContext.current
 
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
-    val loginResult by viewModel.loginResult.observeAsState()
+    val loading by viewModel.loading.observeAsState(false)
+    val error by viewModel.error.observeAsState()
+    val success by viewModel.success.observeAsState(false)
+
+    var alreadyNavigated by remember { mutableStateOf(false) }
+
+    // 🚀 Navegación cuando login es exitoso
+    LaunchedEffect(success) {
+        if (success && !alreadyNavigated) {
+            alreadyNavigated = true
+            navController.navigate(Routes.ESTABLECIMIENTOS) {
+                popUpTo(Routes.LOGIN) { inclusive = true }
+            }
+        }
+    }
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
+        modifier = Modifier.fillMaxSize().padding(16.dp),
         verticalArrangement = Arrangement.Center
     ) {
 
-        Text("Iniciar Sesión")
-
-        TextField(
+        OutlinedTextField(
             value = username,
             onValueChange = { username = it },
             label = { Text("Usuario") }
         )
 
-        TextField(
+        Spacer(modifier = Modifier.height(8.dp))
+
+        OutlinedTextField(
             value = password,
             onValueChange = { password = it },
             label = { Text("Contraseña") }
         )
 
-        Button(onClick = {
-            viewModel.login(username, password)
-        }) {
-            Text("Ingresar")
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(
+            onClick = {
+                viewModel.login(username, password)
+            },
+            enabled = !loading
+        ) {
+            Text(if (loading) "Cargando..." else "Iniciar sesión")
         }
 
-        TextButton(onClick = {
-            navController.navigate(Routes.REGISTER)
-        }) {
-            Text("Crear cuenta")
-        }
-
-        loginResult?.let {
-            LaunchedEffect(it) {
-
-                val tokenManager = TokenManager(context.applicationContext)
-                tokenManager.saveToken(it.access)
-
-                navController.navigate(Routes.ESTABLECIMIENTOS) {
-                    popUpTo(Routes.LOGIN) { inclusive = true }
-                }
-            }
+        error?.let {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(text = it, color = Color.Red)
         }
     }
 }

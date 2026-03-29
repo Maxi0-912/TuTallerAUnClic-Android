@@ -14,26 +14,41 @@ class EstablecimientoViewModel @Inject constructor() : ViewModel() {
 
     var lista = mutableStateListOf<EstablecimientoUI>()
 
-    fun cargarEstablecimientos(lat: Double, lng: Double) {
+    fun cargarEstablecimientos() {
 
-        val apiData = listOf(
+        // 🔥 SIMULANDO BACKEND
+        val fakeApi = listOf(
             Establecimiento(
-                id = "1",
+                id = 1,
                 nombre = "Taller El Pro",
                 direccion = "Calle 123",
-                calificacion = 4.5,
-                imagen = "https://picsum.photos/400"
+                telefono = "3001234567",
+                hora_apertura = "08:00",
+                hora_cierre = "18:00",
+                descripcion = "Mecánica general",
+                latitud = "6.2442",
+                longitud = "-75.5812",
+                propietario = 1,
+                tipo = 1,
+                calificacion = 4.5
             ),
             Establecimiento(
-                id = "2",
+                id = 2,
                 nombre = "Lavadero Clean",
                 direccion = "Carrera 45",
-                calificacion = 4.2,
-                imagen = "https://picsum.photos/401"
+                telefono = "3007654321",
+                hora_apertura = "07:00",
+                hora_cierre = "17:00",
+                descripcion = "Lavado profesional",
+                latitud = "6.2450",
+                longitud = "-75.5800",
+                propietario = 2,
+                tipo = 2,
+                calificacion = 4.2
             )
         )
 
         lista.clear()
-        lista.addAll(apiData.map { it.toUI() })
+        lista.addAll(fakeApi.map { it.toUI() })
     }
 }

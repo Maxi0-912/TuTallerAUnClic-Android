@@ -8,7 +8,9 @@ fun Establecimiento.toUI(): EstablecimientoUI {
         id = id,
         nombre = nombre,
         direccion = direccion,
-        calificacion = calificacion,
-        imagen = imagen
+        imagenUrl = "", // luego lo traes del backend
+        rating = calificacion, // mapeo correcto
+        totalReviews = 0, // temporal si no viene del backend
+        precioDesde = "$0" // temporal
     )
 }

@@ -101,13 +101,34 @@ class MainRepository @Inject constructor(
     // ==========================
 
     suspend fun crearCita(
-        request: CrearCitaRequest
-    ): Response<Cita> {
-        return api.crearCita(request)
+        establecimientoId: Int,
+        servicioId: Int,
+        fecha: String,
+        hora: String,
+        comentario: String
+    ) {
+        api.crearCita(
+            CrearCitaRequest(
+                establecimiento = establecimientoId,
+                agenda = agendaId, // 🔥 ahora usas agenda
+                fecha = fecha,
+                descripcion = comentario
+        )
+    }
+
+    suspend fun obtenerAgendas(
+        establecimientoId: Int,
+        fecha: String
+    ): List<Agenda> {
+        return api.obtenerAgendas(establecimientoId, fecha)
     }
 
     suspend fun misCitas(): Response<List<Cita>> {
         return api.misCitas()
+    }
+
+    suspend fun getCitas(): List<Cita> {
+        return api.getCitas()
     }
 
     suspend fun citasEmpresa(): Response<List<Cita>> {

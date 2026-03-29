@@ -1,23 +1,34 @@
 package com.manuel.tutalleraunclic.core.navigation
 
+
+
 object Routes {
 
 
 
-    const val LOGIN = "login"
-    const val REGISTER = "register"
 
-    const val ESTABLECIMIENTOS = "establecimientos"
+
+    const val EDITAR_PERFIL = "editar_perfil"
+
     const val MIS_CITAS = "mis_citas"
     const val MAPA = "mapa"
     const val PERFIL = "perfil"
 
-    const val DETALLE_ESTABLECIMIENTO = "detalle_establecimiento/{id}"
 
-    const val CREAR_CITA = "crear_cita"
+    const val REGISTER = "register"
+    const val LOGIN = "login"
+    const val ESTABLECIMIENTOS = "establecimientos"
+    const val DETALLE = "detalle"
+    const val DETALLE_ARG = "detalle/{id}"
+
+
+
     const val CITA = "cita"
+    const val CITA_ARG = "cita/{establecimientoId}/{servicioId}"
 
-    const val EDITAR_PERFIL = "editar_perfil"
 
-    fun detalleEstablecimiento(id: Int) = "detalle_establecimiento/$id"
+    fun cita(establecimientoId: Int, servicioId: Int) =
+        "cita/$establecimientoId/$servicioId"
+
+    fun detalle(id: String) = "$DETALLE/$id"
 }

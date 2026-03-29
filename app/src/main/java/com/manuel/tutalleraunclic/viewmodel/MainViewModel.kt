@@ -1,9 +1,7 @@
 package com.manuel.tutalleraunclic.viewmodel
 
 import android.util.Log
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import com.manuel.tutalleraunclic.data.local.TokenManager
+import androidx.lifecycle.*
 import com.manuel.tutalleraunclic.data.model.request.UpdateUserRequest
 import com.manuel.tutalleraunclic.data.repository.MainRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -12,31 +10,51 @@ import javax.inject.Inject
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
-    private val repository: MainRepository,
-    private val tokenManager: TokenManager
+    private val repository: MainRepository
 ) : ViewModel() {
 
+    // 🔄 Estado de carga
+    private val _loading = MutableLiveData(false)
+    val loading: LiveData<Boolean> = _loading
+
+    // ✅ Éxito
+    private val _success = MutableLiveData<Boolean>()
+    val success: LiveData<Boolean> = _success
+
+    // ❌ Error
+    private val _error = MutableLiveData<String?>()
+    val error: LiveData<String?> = _error
+
+    // 🚀 ACTUALIZAR PERFIL
     fun actualizarPerfil(data: UpdateUserRequest) {
         viewModelScope.launch {
+
+            _error.value = null
+
             try {
-                val token = tokenManager.getToken()
+                _loading.value = true
 
-                if (token.isNullOrEmpty()) {
-                    Log.e("MainViewModel", "Token nulo o vacío")
-                    return@launch
-                }
-
+                // 🔥 SIN token manual → interceptor lo maneja
                 val response = repository.actualizarPerfil(data)
 
                 if (response.isSuccessful) {
-                    Log.d("MainViewModel", "Perfil actualizado correctamente")
+                    _success.value = true
                 } else {
-                    Log.e("MainViewModel", "Error: ${response.code()}")
+                    _error.value = "Error ${response.code()}"
                 }
 
             } catch (e: Exception) {
-                Log.e("MainViewModel", "Error conexión: ${e.message}")
+                _error.value = "Error de red: ${e.message}"
+                Log.e("MainViewModel", "actualizarPerfil", e)
+            } finally {
+                _loading.value = false
             }
         }
+    }
+
+    // 🔄 Resetear estados (útil en UI)
+    fun resetState() {
+        _success.value = false
+        _error.value = null
     }
 }

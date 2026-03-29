@@ -7,34 +7,30 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.manuel.tutalleraunclic.data.model.entity.Servicio
 
+@OptIn(ExperimentalMaterial3Api::class) // ✅ VA AQUÍ
+
 @Composable
-fun ServicioCard(servicio: Servicio) {
-
+fun ServicioCard(
+    servicio: Servicio,
+    onClick: () -> Unit
+) {
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(8.dp)
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth()
     ) {
-
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
+        Column(modifier = Modifier.padding(16.dp)) {
 
             Text(
                 text = servicio.nombre,
                 style = MaterialTheme.typography.titleMedium
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
-            Button(onClick = { }) {
-
-                Text("Agendar")
-
-            }
-
+            Text(
+                text = "Precio: $${servicio.tipo_servicio.precio}",
+                style = MaterialTheme.typography.bodyMedium
+            )
         }
-
     }
-
 }
