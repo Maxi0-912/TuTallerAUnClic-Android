@@ -100,20 +100,8 @@ class MainRepository @Inject constructor(
     // 📅 CITAS
     // ==========================
 
-    suspend fun crearCita(
-        establecimientoId: Int,
-        servicioId: Int,
-        fecha: String,
-        hora: String,
-        comentario: String
-    ) {
-        api.crearCita(
-            CrearCitaRequest(
-                establecimiento = establecimientoId,
-                agenda = agendaId, // 🔥 ahora usas agenda
-                fecha = fecha,
-                descripcion = comentario
-        )
+    suspend fun crearCita(request: CrearCitaRequest) {
+        api.crearCita(request)
     }
 
     suspend fun obtenerAgendas(

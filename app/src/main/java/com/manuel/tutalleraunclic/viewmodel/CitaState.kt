@@ -1,16 +1,12 @@
 package com.manuel.tutalleraunclic.viewmodel
 
-sealed class CitaState {
+import com.manuel.tutalleraunclic.data.model.entity.Agenda
 
-    // Estado inicial
-    object Idle : CitaState()
-
-    // Mientras carga (API)
-    object Loading : CitaState()
-
-    // Cuando todo sale bien
-    object Success : CitaState()
-
-    // Error con mensaje
-    data class Error(val message: String) : CitaState()
-}
+data class CitaState(
+    val fechaSeleccionada: String = "",
+    val horaSeleccionada: String? = null, // 🔥 ESTA LÍNEA
+    val agendas: List<Agenda> = emptyList(),
+    val isLoading: Boolean = false,
+    val error: String? = null,
+    val success: Boolean = false
+)

@@ -10,7 +10,7 @@ import com.manuel.tutalleraunclic.ui.screens.establecimientos.ListaEstablecimien
 import com.manuel.tutalleraunclic.ui.screens.establecimientos.DetalleEstablecimientoScreen
 import com.manuel.tutalleraunclic.ui.screens.citas.CrearCitaScreen
 import com.manuel.tutalleraunclic.viewmodel.LoginViewModel
-
+import  com.manuel.tutalleraunclic.viewmodel.CitaViewModel
 @Composable
 fun AppNavigation() {
 
@@ -70,13 +70,11 @@ fun AppNavigation() {
             val establecimientoId =
                 backStackEntry.arguments?.getInt("establecimientoId") ?: 0
 
-            val servicioId =
-                backStackEntry.arguments?.getInt("servicioId") ?: 0
+            val viewModel: CitaViewModel = hiltViewModel()
 
             CrearCitaScreen(
-                navController = navController,
-                establecimientoId = establecimientoId,
-                servicioId = servicioId
+                viewModel = viewModel,
+                establecimientoId = establecimientoId
             )
         }
     }

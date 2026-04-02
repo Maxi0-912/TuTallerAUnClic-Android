@@ -3,13 +3,14 @@ package com.manuel.tutalleraunclic.core.navigation
 import androidx.navigation.*
 import androidx.navigation.compose.composable
 import androidx.navigation.NavHostController
-
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.manuel.tutalleraunclic.ui.screens.citas.MisCitasScreen
 import com.manuel.tutalleraunclic.ui.screens.citas.CrearCitaScreen
 import com.manuel.tutalleraunclic.ui.screens.mapa.MapScreen
 import com.manuel.tutalleraunclic.ui.screens.perfil.PerfilScreen
 import com.manuel.tutalleraunclic.ui.screens.establecimientos.EstablecimientosScreen
 import com.manuel.tutalleraunclic.ui.screens.establecimientos.DetalleEstablecimientoScreen
+import com.manuel.tutalleraunclic.viewmodel.CitaViewModel
 
 fun NavGraphBuilder.mainGraph(navController: NavHostController) {
 
@@ -65,14 +66,11 @@ fun NavGraphBuilder.mainGraph(navController: NavHostController) {
             backStackEntry.arguments?.getInt("establecimientoId")
         ) { "establecimientoId requerido" }
 
-        val servicioId = requireNotNull(
-            backStackEntry.arguments?.getInt("servicioId")
-        ) { "servicioId requerido" }
+        val viewModel: CitaViewModel = hiltViewModel()
 
         CrearCitaScreen(
-            navController = navController,
-            establecimientoId = establecimientoId,
-            servicioId = servicioId
+            viewModel = viewModel,
+            establecimientoId = establecimientoId
         )
     }
 

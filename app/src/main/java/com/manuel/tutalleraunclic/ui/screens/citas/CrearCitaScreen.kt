@@ -1,223 +1,160 @@
 package com.manuel.tutalleraunclic.ui.screens.citas
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
-import androidx.hilt.navigation.compose.hiltViewModel
-import com.manuel.tutalleraunclic.core.navigation.Routes
 import com.manuel.tutalleraunclic.viewmodel.CitaViewModel
-import com.manuel.tutalleraunclic.viewmodel.CitaState
-import com.manuel.tutalleraunclic.ui.components.SelectorField
 import com.manuel.tutalleraunclic.data.model.entity.Agenda
-import java.util.*
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun CrearCitaScreen(
-    navController: NavController,
-    establecimientoId: Int,
-    viewModel: CitaViewModel = hiltViewModel()
+    viewModel: CitaViewModel,
+    establecimientoId: Int
 ) {
 
     val state by viewModel.state.collectAsState()
-    val snackbarHostState = remember { SnackbarHostState() }
 
-    var fecha by remember { mutableStateOf("") }
-    var comentario by remember { mutableStateOf("") }
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp)
+    ) {
 
-    var showDatePicker by remember { mutableStateOf(false) }
+        // 🔥 HEADER
+        Text(
+            text = "Agendar cita",
+            style = MaterialTheme.typography.headlineMedium
+        )
 
-    // 🔥 NUEVO: agenda seleccionada
-    var agendaSeleccionada by remember { mutableStateOf<Agenda?>(null) }
+        Spacer(modifier = Modifier.height(16.dp))
 
-    // 🔥 FEEDBACK
-    LaunchedEffect(state) {
-        when (state) {
+        // =========================
+        // 📅 FECHAS
+        // =========================
+        Text(
+            text = "Selecciona una fecha",
+            style = MaterialTheme.typography.titleMedium
+        )
 
-            is CitaState.Success -> {
-                snackbarHostState.showSnackbar("✅ Cita agendada")
-                viewModel.resetState()
+        Spacer(modifier = Modifier.height(8.dp))
 
-                navController.navigate(Routes.MIS_CITAS) {
-                    popUpTo(Routes.CITA) { inclusive = true }
-                }
-            }
-
-            is CitaState.Error -> {
-                snackbarHostState.showSnackbar(
-                    (state as CitaState.Error).message
-                )
-                viewModel.resetState()
-            }
-
-            else -> {}
-        }
-    }
-
-    // 📅 DATE PICKER
-    if (showDatePicker) {
-        val dateState = rememberDatePickerState()
-
-        DatePickerDialog(
-            onDismissRequest = { showDatePicker = false },
-            confirmButton = {
-                TextButton(onClick = {
-                    dateState.selectedDateMillis?.let {
-                        val cal = Calendar.getInstance().apply { timeInMillis = it }
-                        fecha = "%04d-%02d-%02d".format(
-                            cal.get(Calendar.YEAR),
-                            cal.get(Calendar.MONTH) + 1,
-                            cal.get(Calendar.DAY_OF_MONTH)
-                        )
-
-                        // 🔥 PASO 6: cargar agendas automáticamente
-                        viewModel.cargarAgendas(establecimientoId, fecha)
-
-                        agendaSeleccionada = null
-                    }
-                    showDatePicker = false
-                }) { Text("Aceptar") }
-            }
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            DatePicker(state = dateState)
-        }
-    }
 
-    Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        topBar = {
-            TopAppBar(
-                title = { Text("Agendar cita") },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, null)
-                    }
-                }
+            listOf("2026-04-01", "2026-04-02", "2026-04-03").forEach { fecha ->
+
+                val isSelected = fecha == state.fechaSeleccionada
+
+                FilterChip(
+                    selected = isSelected,
+                    onClick = {
+                        viewModel.seleccionarFecha(fecha, establecimientoId)
+                    },
+                    label = { Text(fecha) },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = MaterialTheme.colorScheme.primary,
+                        selectedLabelColor = Color.White
+                    )
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        // =========================
+        // ⏳ LOADING
+        // =========================
+        if (state.isLoading) {
+            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+
+        // =========================
+        // ⏰ HORAS
+        // =========================
+        Text(
+            text = "Horas disponibles",
+            style = MaterialTheme.typography.titleMedium
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        if (state.agendas.isEmpty() && state.fechaSeleccionada.isNotBlank()) {
+            Text(
+                text = "No hay horarios disponibles",
+                color = Color.Gray
             )
         }
-    ) { padding ->
 
-        Column(
-            modifier = Modifier
-                .padding(padding)
-                .padding(16.dp)
-                .fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
 
-            // 🔥 CARD
-            Card(
-                shape = RoundedCornerShape(20.dp),
-                elevation = CardDefaults.cardElevation(8.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+            state.agendas.forEach { agenda ->
+
+                val isSelected = agenda.hora == state.horaSeleccionada
+
+                FilterChip(
+                    selected = isSelected,
+                    onClick = {
+                        viewModel.seleccionarHora(agenda.hora)
+                    },
+                    label = { Text(agenda.hora) }
                 )
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(14.dp)
-                ) {
-
-                    Text("Selecciona fecha y hora")
-
-                    // 📅 FECHA
-                    SelectorField(
-                        label = "Fecha",
-                        value = fecha,
-                        icon = Icons.Default.CalendarToday,
-                        onClick = { showDatePicker = true }
-                    )
-
-                    // 🔥 PASO 5: HORARIOS DINÁMICOS
-                    Text("Horarios disponibles")
-
-                    when {
-                        viewModel.isLoadingAgendas -> {
-                            CircularProgressIndicator()
-                        }
-
-                        viewModel.agendas.isEmpty() -> {
-                            Text("No hay horarios disponibles 😔")
-                        }
-
-                        else -> {
-                            FlowRow(
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                viewModel.agendas.forEach { agenda ->
-
-                                    val selected = agendaSeleccionada?.id == agenda.id
-
-                                    FilterChip(
-                                        selected = selected,
-                                        onClick = { agendaSeleccionada = agenda },
-                                        label = { Text(agenda.hora) },
-                                        leadingIcon = {
-                                            if (selected) {
-                                                Icon(Icons.Default.Check, null)
-                                            }
-                                        }
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    // 💬 COMENTARIO
-                    OutlinedTextField(
-                        value = comentario,
-                        onValueChange = { comentario = it },
-                        label = { Text("Comentario") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
             }
+        }
 
-            // 🔥 PASO 7: BOTÓN INTELIGENTE
-            Button(
-                onClick = {
+        Spacer(modifier = Modifier.height(24.dp))
 
-                    if (fecha.isBlank()) {
-                        viewModel.setError("Selecciona fecha")
-                        return@Button
-                    }
+        // =========================
+        // 🚀 BOTÓN
+        // =========================
+        Button(
+            onClick = {
+                viewModel.crearCita(
+                    establecimientoId = establecimientoId,
+                    descripcion = "Sin comentario"
+                )
+            },
+            enabled = state.fechaSeleccionada.isNotBlank() && state.horaSeleccionada != null,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp)
+        ) {
+            Text("Agendar cita")
+        }
 
-                    if (agendaSeleccionada == null) {
-                        viewModel.setError("Selecciona un horario")
-                        return@Button
-                    }
+        Spacer(modifier = Modifier.height(16.dp))
 
-                    viewModel.crearCita(
-                        establecimientoId,
-                        agendaSeleccionada!!.id,
-                        fecha,
-                        comentario
-                    )
-                },
-                enabled = agendaSeleccionada != null && state !is CitaState.Loading,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                shape = RoundedCornerShape(16.dp)
-            ) {
+        // =========================
+        // ❌ ERROR
+        // =========================
+        state.error?.let {
+            Text(
+                text = it,
+                color = Color.Red
+            )
+        }
 
-                if (state is CitaState.Loading) {
-                    CircularProgressIndicator(strokeWidth = 2.dp)
-                } else {
-                    Icon(Icons.Default.Check, null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Confirmar cita")
-                }
-            }
+        // =========================
+        // ✅ SUCCESS
+        // =========================
+        if (state.success) {
+            Text(
+                text = "Cita creada correctamente ✅",
+                color = Color(0xFF2E7D32)
+            )
         }
     }
 }

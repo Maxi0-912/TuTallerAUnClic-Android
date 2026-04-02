@@ -9,6 +9,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.manuel.tutalleraunclic.MainActivity
 import com.manuel.tutalleraunclic.data.repository.MainRepository
+import  com.manuel.tutalleraunclic.data.model.request.CrearCitaRequest
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,93 +24,88 @@ class CitaViewModel @Inject constructor(
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow<CitaState>(CitaState.Idle)
+    private val _state = MutableStateFlow(CitaState())
     val state: StateFlow<CitaState> = _state
 
-    fun crearCita(
-        establecimientoId: Int,
-        servicioId: Int,
-        fecha: String,
-        hora: String,
-        comentario: String
-    ) {
+    fun seleccionarFecha(fecha: String, establecimientoId: Int) {
+        _state.value = _state.value.copy(
+            fechaSeleccionada = fecha,
 
-        if (fecha.isBlank() || hora.isBlank()) {
-            _state.value = CitaState.Error("Fecha y hora son obligatorias")
-            return
-        }
+        )
+        cargarAgendas(establecimientoId, fecha)
+    }
 
-        viewModelScope.launch {
-            _state.value = CitaState.Loading
 
-            try {
-                repository.crearCita(
-                    establecimientoId,
-                    servicioId,
-                    fecha,
-                    hora,
-                    comentario
-                )
 
-                _state.value = CitaState.Success
-
-                // 🔔 Notificación automática
-                notificarCita()
-
-            } catch (e: Exception) {
-                _state.value = CitaState.Error(
-                    e.message ?: "Error al crear cita"
-                )
-            }
-        }
+    fun seleccionarHora(hora: String) {
+        _state.value = _state.value.copy(
+            horaSeleccionada = hora
+        )
     }
 
     fun cargarAgendas(establecimientoId: Int, fecha: String) {
         viewModelScope.launch {
 
-            isLoadingAgendas = true
+            _state.value = _state.value.copy(isLoading = true)
 
             try {
-                agendas = repository.obtenerAgendas(establecimientoId, fecha)
+                val agendas = repository.obtenerAgendas(establecimientoId, fecha)
+
+                _state.value = _state.value.copy(
+                    isLoading = false,
+                    agendas = agendas,
+                    error = null
+                )
+
             } catch (e: Exception) {
-                setError("Error cargando horarios")
+                _state.value = _state.value.copy(
+                    isLoading = false,
+                    error = "Error cargando horarios"
+                )
             }
-
-            isLoadingAgendas = false
         }
     }
 
-    fun resetState() {
-        _state.value = CitaState.Idle
+    fun crearCita(
+        establecimientoId: Int,
+        descripcion: String
+    ) {
+        val state = _state.value
+
+        if (state.horaSeleccionada == null) {
+            _state.value = state.copy(error = "Selecciona una hora")
+            return
+        }
+
+        viewModelScope.launch {
+            try {
+                repository.crearCita(
+                    CrearCitaRequest(
+                        establecimiento = establecimientoId,
+                        fecha = state.fechaSeleccionada,
+                        hora = state.horaSeleccionada,
+                        servicio = 1,
+                        descripcion = descripcion
+                    )
+                )
+
+                _state.value = state.copy(success = true)
+
+            } catch (e: Exception) {
+                _state.value = state.copy(error = "Error al crear cita")
+            }
+        }
     }
 
-    // 🔔 NOTIFICACIÓN PRO
     private fun notificarCita() {
-
-        val intent = Intent(context, MainActivity::class.java).apply {
-            putExtra("destino", "citas")
-        }
-
-        val pendingIntent = PendingIntent.getActivity(
-            context,
-            0,
-            intent,
-            PendingIntent.FLAG_IMMUTABLE
-        )
+        val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
         val notification = NotificationCompat.Builder(context, "citas")
             .setContentTitle("Cita agendada 🚗")
-            .setContentText("Tu cita fue creada correctamente")
+            .setContentText("Todo listo, revisa tus citas")
             .setSmallIcon(android.R.drawable.ic_dialog_info)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setContentIntent(pendingIntent)
-            .setAutoCancel(true)
             .build()
 
-        val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         manager.notify(1, notification)
-    }
-    fun setError(message: String) {
-        _state.value = CitaState.Error(message)
     }
 }

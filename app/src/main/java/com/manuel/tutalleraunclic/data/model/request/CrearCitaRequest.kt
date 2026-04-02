@@ -2,7 +2,8 @@ package com.manuel.tutalleraunclic.data.model.request
 
 data class CrearCitaRequest(
     val establecimiento: Int,
-    val agenda: Int,
     val fecha: String,
+    val hora: String,
+    val servicio: Int,
     val descripcion: String
 )
