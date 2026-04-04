@@ -7,9 +7,10 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import dagger.hilt.android.AndroidEntryPoint
-
-import com.manuel.tutalleraunclic.core.navigation.AppNavigation
+import  com.manuel.tutalleraunclic.ui.screens.main.MainScreen
+import com.manuel.tutalleraunclic.core.navigation.AppRoot
 import com.manuel.tutalleraunclic.ui.theme.TuTallerAUnClicTheme
+import androidx.compose.material3.NavigationBarItem
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -21,7 +22,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             TuTallerAUnClicTheme {
-                AppNavigation()
+                AppRoot()
             }
         }
     }

@@ -30,10 +30,10 @@ fun LoginScreen(
 
     // 🚀 Navegación cuando login es exitoso
     LaunchedEffect(success) {
-        if (success && !alreadyNavigated) {
-            alreadyNavigated = true
+        if (success) {
             navController.navigate(Routes.ESTABLECIMIENTOS) {
                 popUpTo(Routes.LOGIN) { inclusive = true }
+                launchSingleTop = true
             }
         }
     }
@@ -71,6 +71,14 @@ fun LoginScreen(
         error?.let {
             Spacer(modifier = Modifier.height(8.dp))
             Text(text = it, color = Color.Red)
+        }
+
+        TextButton(
+            onClick = {
+                navController.navigate(Routes.REGISTER)
+            }
+        ) {
+            Text("¿No tienes cuenta? Regístrate")
         }
     }
 }

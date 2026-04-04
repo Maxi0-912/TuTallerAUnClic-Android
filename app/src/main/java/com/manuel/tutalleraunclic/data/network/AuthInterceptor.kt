@@ -13,23 +13,14 @@ class AuthInterceptor @Inject constructor(
 
         val originalRequest = chain.request()
 
-        // ✅ Obtener token correctamente
-        val token = tokenManager.getAccessToken()
+        val token = tokenManager.getToken() // ✅ CORRECTO
 
         val requestBuilder = originalRequest.newBuilder()
 
-        // 🔐 Agregar token si existe
         if (!token.isNullOrEmpty()) {
             requestBuilder.addHeader("Authorization", "Bearer $token")
         }
 
-        val response = chain.proceed(requestBuilder.build())
-
-        // ⚠️ Si falla por auth → limpiar sesión
-        if (response.code == 401) {
-            tokenManager.clear()
-        }
-
-        return response
+        return chain.proceed(requestBuilder.build())
     }
 }

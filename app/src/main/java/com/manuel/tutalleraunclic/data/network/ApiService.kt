@@ -5,6 +5,7 @@ import com.manuel.tutalleraunclic.data.model.request.*
 import com.manuel.tutalleraunclic.data.model.response.LoginResponse
 import retrofit2.Response
 import retrofit2.http.*
+import com.manuel.tutalleraunclic.data.model.response.CitaResponse
 
 interface ApiService {
 
@@ -92,15 +93,10 @@ interface ApiService {
     // ==========================
 
     @POST("citas/")
-    suspend fun crearCita(
-        @Body request: CrearCitaRequest
-    )
+    suspend fun crearCita(@Body cita: CrearCitaRequest): Response<Unit>
 
     @GET("citas/mis/")
-    suspend fun misCitas(): Response<List<Cita>>
-
-    @GET("citas/")
-    suspend fun getCitas(): List<Cita>
+    suspend fun getMisCitas(): List<CitaResponse>
 
     @GET("citas/empresa/")
     suspend fun citasEmpresa(): Response<List<Cita>>
@@ -110,6 +106,26 @@ interface ApiService {
         @Path("id") id: Int,
         @Body request: EstadoRequest
     ): Response<Unit>
+
+
+    @GET("horarios-disponibles/")
+    suspend fun getHorariosDisponibles(
+        @Query("establecimiento") establecimientoId: Int,
+        @Query("fecha") fecha: String
+    ): List<String>
+
+
+    @DELETE("citas/{id}/")
+    suspend fun eliminarCita(@Path("id") id: Int): Response<Unit>
+
+
+    @PUT("citas/{id}/editar/")
+    suspend fun editarCita(
+        @Path("id") id: Int,
+        @Body request: CrearCitaRequest
+    )
+
+
 
     // ==========================
     // ⭐ CALIFICACIONES

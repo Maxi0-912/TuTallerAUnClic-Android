@@ -18,10 +18,12 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 @Composable
 fun CrearCitaScreen(
     viewModel: CitaViewModel,
-    establecimientoId: Int
+    establecimientoId: Int,
+    servicioId: Int
 ) {
 
     val state by viewModel.state.collectAsState()
+    var comentario by remember { mutableStateOf("") }
 
     Column(
         modifier = Modifier
@@ -90,7 +92,7 @@ fun CrearCitaScreen(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        if (state.agendas.isEmpty() && state.fechaSeleccionada.isNotBlank()) {
+        if (state.horarios.isEmpty() && state.fechaSeleccionada.isNotBlank()) {
             Text(
                 text = "No hay horarios disponibles",
                 color = Color.Gray
@@ -101,19 +103,45 @@ fun CrearCitaScreen(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
 
-            state.agendas.forEach { agenda ->
+            state.horarios.forEach { hora ->
 
-                val isSelected = agenda.hora == state.horaSeleccionada
+                val isSelected = hora == state.horaSeleccionada
 
                 FilterChip(
                     selected = isSelected,
                     onClick = {
-                        viewModel.seleccionarHora(agenda.hora)
+                        viewModel.seleccionarHora(hora)
                     },
-                    label = { Text(agenda.hora) }
+                    label = { Text(hora) },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = MaterialTheme.colorScheme.primary,
+                        selectedLabelColor = Color.White
+                    )
                 )
             }
         }
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        // =========================
+        // 📝 COMENTARIO
+        // =========================
+        Text(
+            text = "Describe lo que necesitas",
+            style = MaterialTheme.typography.titleMedium
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        OutlinedTextField(
+            value = comentario,
+            onValueChange = { comentario = it },
+            placeholder = { Text("Ej: lavado completo + aspirado interno") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(120.dp),
+            maxLines = 4
+        )
 
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -124,7 +152,8 @@ fun CrearCitaScreen(
             onClick = {
                 viewModel.crearCita(
                     establecimientoId = establecimientoId,
-                    descripcion = "Sin comentario"
+                    servicioId = servicioId,
+                    descripcion = comentario.ifBlank { "Sin comentario" }
                 )
             },
             enabled = state.fechaSeleccionada.isNotBlank() && state.horaSeleccionada != null,

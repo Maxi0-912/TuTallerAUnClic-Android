@@ -8,6 +8,8 @@ object Routes {
 
 
 
+    const val CREAR_CITA = "crear_cita"
+
     const val EDITAR_PERFIL = "editar_perfil"
 
     const val MIS_CITAS = "mis_citas"

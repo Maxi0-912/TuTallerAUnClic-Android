@@ -8,12 +8,9 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import com.manuel.tutalleraunclic.viewmodel.CitasState
 
-sealed class CitasState {
-    object Loading : CitasState()
-    data class Success(val citas: List<Cita>) : CitasState()
-    data class Error(val message: String) : CitasState()
-}
+
 
 @HiltViewModel
 class CitaListViewModel @Inject constructor(
@@ -25,13 +22,16 @@ class CitaListViewModel @Inject constructor(
 
     fun obtenerCitas() {
         viewModelScope.launch {
+
             _state.value = CitasState.Loading
 
             try {
-                val citas = repository.getCitas()
+                val citas = repository.getMisCitas()
+
                 _state.value = CitasState.Success(citas)
+
             } catch (e: Exception) {
-                _state.value = CitasState.Error("Error al cargar citas")
+                _state.value = CitasState.Error("Error del servidor")
             }
         }
     }

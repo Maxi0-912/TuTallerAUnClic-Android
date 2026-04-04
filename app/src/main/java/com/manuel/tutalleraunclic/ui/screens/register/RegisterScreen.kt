@@ -17,19 +17,21 @@ import androidx.navigation.NavController
 import com.manuel.tutalleraunclic.viewmodel.RegisterViewModel
 
 @Composable
-fun RegisterScreen(navController: NavController) {
+fun RegisterScreen(
+    navController: NavController,
+    viewModel: RegisterViewModel
+)  {
 
     val context = LocalContext.current
-
-    val viewModel: RegisterViewModel = viewModel(
-        factory = androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory
-            .getInstance(context.applicationContext as android.app.Application)
-    )
+    val viewModel: RegisterViewModel = viewModel()
 
     var username by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var loading by remember { mutableStateOf(false) }
+
+    // ✅ CORRECCIÓN CLAVE
+    val loading = viewModel.loading.value
+    val error = viewModel.error.value
 
     Box(
         modifier = Modifier
@@ -87,6 +89,14 @@ fun RegisterScreen(navController: NavController) {
                     singleLine = true
                 )
 
+                // 🔥 ERROR UI
+                error?.let {
+                    Text(
+                        text = it,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+
                 Button(
                     onClick = {
 
@@ -99,30 +109,20 @@ fun RegisterScreen(navController: NavController) {
                             return@Button
                         }
 
-                        loading = true
+                        viewModel.register(username, email, password) {
+                            Toast.makeText(
+                                context,
+                                "Bienvenido 🚀",
+                                Toast.LENGTH_SHORT
+                            ).show()
 
-                        viewModel.register(username, email, password) { success ->
-
-                            loading = false
-
-                            if (success) {
-                                Toast.makeText(
-                                    context,
-                                    "Registro exitoso",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-
-                                navController.popBackStack()
-                            } else {
-                                Toast.makeText(
-                                    context,
-                                    "Error al registrarse",
-                                    Toast.LENGTH_SHORT
-                                ).show()
+                            navController.navigate("home") {
+                                popUpTo("login") { inclusive = true }
                             }
                         }
                     },
                     modifier = Modifier.fillMaxWidth(),
+                    enabled = !loading,
                     shape = RoundedCornerShape(12.dp)
                 ) {
 

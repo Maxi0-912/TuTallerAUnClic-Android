@@ -21,7 +21,7 @@ fun NavGraphBuilder.mainGraph(navController: NavHostController) {
 
     // 🔹 MIS CITAS
     composable(Routes.MIS_CITAS) {
-        MisCitasScreen()
+        MisCitasScreen(navController = navController)
     }
 
     // 🔹 MAPA
@@ -62,15 +62,18 @@ fun NavGraphBuilder.mainGraph(navController: NavHostController) {
         )
     ) { backStackEntry ->
 
-        val establecimientoId = requireNotNull(
-            backStackEntry.arguments?.getInt("establecimientoId")
-        ) { "establecimientoId requerido" }
+        val establecimientoId =
+            backStackEntry.arguments?.getInt("establecimientoId") ?: 0
+
+        val servicioId =
+            backStackEntry.arguments?.getInt("servicioId") ?: 0
 
         val viewModel: CitaViewModel = hiltViewModel()
 
         CrearCitaScreen(
             viewModel = viewModel,
-            establecimientoId = establecimientoId
+            establecimientoId = establecimientoId,
+            servicioId = servicioId
         )
     }
 

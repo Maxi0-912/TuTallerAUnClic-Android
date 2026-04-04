@@ -43,11 +43,13 @@ android {
     }
 
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.10"
+        kotlinCompilerExtensionVersion = "1.5.15"
     }
 }
 
 dependencies {
+
+    implementation("androidx.datastore:datastore-preferences:1.0.0")
 
     implementation("androidx.compose.runtime:runtime-livedata:1.6.0")
 
@@ -66,7 +68,10 @@ dependencies {
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
-    implementation("androidx.compose.material3:material3")
+    implementation("androidx.compose.material3:material3:1.2.1")
+    implementation(platform("androidx.compose:compose-bom:2024.02.01"))
+
+
     implementation("androidx.compose.material:material-icons-extended")
 
     // 🔥 NAVIGATION

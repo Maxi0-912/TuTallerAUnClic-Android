@@ -24,8 +24,8 @@ fun BottomBar(
 
     val items = listOf(
         BottomItem(Routes.ESTABLECIMIENTOS, Icons.Default.Home, "Inicio"),
-        BottomItem("citas", Icons.Default.DateRange, "Citas"),
-        BottomItem("perfil", Icons.Default.Person, "Perfil")
+        BottomItem(Routes.MIS_CITAS, Icons.Default.DateRange, "Citas"),
+        BottomItem(Routes.PERFIL, Icons.Default.Person, "Perfil")
     )
 
     val navBackStackEntry = navController.currentBackStackEntryAsState()
@@ -39,26 +39,29 @@ fun BottomBar(
 
             val color by animateColorAsState(
                 if (selected) MaterialTheme.colorScheme.primary
-                else Color.Gray
+                else Color.Gray,
+                label = ""
             )
 
             NavigationBarItem(
                 selected = selected,
-
                 onClick = {
                     navController.navigate(item.route) {
-                        popUpTo(Routes.ESTABLECIMIENTOS)
+
+                        popUpTo(navController.graph.startDestinationId) {
+                            saveState = true
+                        }
+
+                        restoreState = true
                         launchSingleTop = true
                     }
                 },
-
                 icon = {
                     BadgedBox(
                         badge = {
-                            // 🔴 Badge solo en citas (ejemplo)
-                            if (item.route == "citas") {
+                            if (item.route == Routes.MIS_CITAS) {
                                 Badge {
-                                    Text("1") // luego lo conectas a datos reales
+                                    Text("1")
                                 }
                             }
                         }
@@ -70,7 +73,6 @@ fun BottomBar(
                         )
                     }
                 },
-
                 label = {
                     Text(
                         text = item.label,

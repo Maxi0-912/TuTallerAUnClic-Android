@@ -1,44 +1,32 @@
 package com.manuel.tutalleraunclic.data.local
 
 import android.content.Context
-import android.content.SharedPreferences
-import dagger.hilt.android.qualifiers.ApplicationContext
-import javax.inject.Inject
+import androidx.datastore.preferences.core.*
+import androidx.datastore.preferences.preferencesDataStore
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 
-class TokenManager @Inject constructor(
-    @ApplicationContext private val context: Context
-) {
+private val Context.dataStore by preferencesDataStore(name = "auth_prefs")
 
-    private val prefs: SharedPreferences =
-        context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+class TokenManager(private val context: Context) {
 
-    // 🔐 TOKENS
-    fun saveTokens(accessToken: String, refreshToken: String) {
-        prefs.edit()
-            .putString("access_token", accessToken)
-            .putString("refresh_token", refreshToken)
-            .apply()
+    companion object {
+        val TOKEN_KEY = stringPreferencesKey("auth_token")
     }
 
-    fun getAccessToken(): String? {
-        return prefs.getString("access_token", null)
+    suspend fun saveToken(token: String) {
+        context.dataStore.edit {
+            it[TOKEN_KEY] = token
+        }
     }
 
-    fun getRefreshToken(): String? {
-        return prefs.getString("refresh_token", null)
+    fun getToken(): String? = runBlocking {
+        context.dataStore.data.first()[TOKEN_KEY]
     }
 
-    // 👤 USER
-    fun saveUserId(userId: Int) {
-        prefs.edit().putInt("user_id", userId).apply()
-    }
-
-    fun getUserId(): Int {
-        return prefs.getInt("user_id", 0)
-    }
-
-    // 🧹 LOGOUT
-    fun clear() {
-        prefs.edit().clear().apply()
+    suspend fun clear() {
+        context.dataStore.edit {
+            it.clear()
+        }
     }
 }

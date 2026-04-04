@@ -1,42 +1,67 @@
 package com.manuel.tutalleraunclic.core.navigation
 
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.navigation.NavController
+import androidx.navigation.compose.currentBackStackEntryAsState
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Event
-import androidx.compose.material.icons.filled.Map
-import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.*
 
 @Composable
 fun BottomBar(navController: NavController) {
 
+    val navBackStackEntry = navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry.value?.destination?.route
+
     NavigationBar {
 
         NavigationBarItem(
-            selected = false,
-            onClick = { navController.navigate(Routes.ESTABLECIMIENTOS) },
-            icon = { Icon(Icons.Default.Home, contentDescription = "Inicio") }
+            selected = currentRoute == Routes.ESTABLECIMIENTOS,
+            onClick = {
+                navController.navigate(Routes.ESTABLECIMIENTOS) {
+                    popUpTo(navController.graph.startDestinationId)
+                    launchSingleTop = true
+                }
+            },
+            icon = { Icon(Icons.Default.Home, contentDescription = "Inicio") },
+            label = { Text("Inicio") }
         )
 
         NavigationBarItem(
-            selected = false,
-            onClick = { navController.navigate(Routes.MIS_CITAS) },
-            icon = { Icon(Icons.Default.Event, contentDescription = "Citas") }
+            selected = currentRoute == Routes.MIS_CITAS,
+            onClick = {
+                navController.navigate(Routes.MIS_CITAS) {
+                    popUpTo(navController.graph.startDestinationId)
+                    launchSingleTop = true
+                }
+            },
+            icon = { Icon(Icons.Default.Event, contentDescription = "Citas") },
+            label = { Text("Citas") }
         )
 
         NavigationBarItem(
-            selected = false,
-            onClick = { navController.navigate(Routes.MAPA) },
-            icon = { Icon(Icons.Default.Map, contentDescription = "Mapa") }
+            selected = currentRoute == Routes.MAPA,
+            onClick = {
+                navController.navigate(Routes.MAPA) {
+                    popUpTo(navController.graph.startDestinationId)
+                    launchSingleTop = true
+                }
+            },
+            icon = { Icon(Icons.Default.Map, contentDescription = "Mapa") },
+            label = { Text("Mapa") }
         )
 
         NavigationBarItem(
-            selected = false,
-            onClick = { navController.navigate(Routes.PERFIL) },
-            icon = { Icon(Icons.Default.Person, contentDescription = "Perfil") }
+            selected = currentRoute == Routes.PERFIL,
+            onClick = {
+                navController.navigate(Routes.PERFIL) {
+                    popUpTo(navController.graph.startDestinationId)
+                    launchSingleTop = true
+                }
+            },
+            icon = { Icon(Icons.Default.Person, contentDescription = "Perfil") },
+            label = { Text("Perfil") }
         )
     }
 }

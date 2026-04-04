@@ -1,18 +1,23 @@
-package com.manuel.tutalleraunclic.di
+package com.manuel.tutalleraunclic.data.di
 
-import com.manuel.tutalleraunclic.data.local.SessionManager
+import android.content.Context
 import com.manuel.tutalleraunclic.data.local.TokenManager
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import dagger.hilt.android.qualifiers.ApplicationContext
+import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
 object AppModule {
 
     @Provides
-    fun provideSessionManager(tokenManager: TokenManager): SessionManager {
-        return SessionManager(tokenManager)
+    @Singleton
+    fun provideTokenManager(
+        @ApplicationContext context: Context
+    ): TokenManager {
+        return TokenManager(context)
     }
 }

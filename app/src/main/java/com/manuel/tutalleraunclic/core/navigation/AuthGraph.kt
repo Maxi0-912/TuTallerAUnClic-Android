@@ -7,6 +7,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.manuel.tutalleraunclic.ui.screens.register.RegisterScreen
 import com.manuel.tutalleraunclic.ui.screens.login.LoginScreen
 import com.manuel.tutalleraunclic.viewmodel.LoginViewModel
+import  com.manuel.tutalleraunclic.viewmodel.RegisterViewModel
 
 fun NavGraphBuilder.authGraph(navController: NavController) {
 
@@ -23,6 +24,12 @@ fun NavGraphBuilder.authGraph(navController: NavController) {
 
     // 📝 REGISTER (ejemplo)
     composable(Routes.REGISTER) {
-        RegisterScreen(navController = navController)
+
+        val viewModel: RegisterViewModel = hiltViewModel()
+
+        RegisterScreen(
+            navController = navController,
+            viewModel = viewModel
+        )
     }
 }

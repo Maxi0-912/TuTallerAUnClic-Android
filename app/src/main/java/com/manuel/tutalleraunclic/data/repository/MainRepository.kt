@@ -1,21 +1,18 @@
 package com.manuel.tutalleraunclic.data.repository
 
-import com.manuel.tutalleraunclic.data.network.ApiService
+import com.manuel.tutalleraunclic.data.local.TokenManager
 import com.manuel.tutalleraunclic.data.model.entity.*
 import com.manuel.tutalleraunclic.data.model.request.*
 import com.manuel.tutalleraunclic.data.model.response.LoginResponse
-
-import javax.inject.Inject
+import com.manuel.tutalleraunclic.data.model.response.CitaResponse
+import com.manuel.tutalleraunclic.data.network.ApiService
 import retrofit2.Response
+import javax.inject.Inject
 
 class MainRepository @Inject constructor(
-    private val api: ApiService
+    private val api: ApiService,
+    private val tokenManager: TokenManager
 ) {
-
-    suspend fun obtenerServicios(establecimientoId: Int) =
-        api.getServicios(establecimientoId)
-
-
 
     // ==========================
     // 🔐 AUTH
@@ -27,6 +24,18 @@ class MainRepository @Inject constructor(
 
     suspend fun register(request: RegisterRequest): Response<Usuario> {
         return api.register(request)
+    }
+
+    suspend fun saveToken(token: String) {
+        tokenManager.saveToken(token)
+    }
+
+    fun getToken(): String? {
+        return tokenManager.getToken()
+    }
+
+    suspend fun logout() {
+        tokenManager.clear()
     }
 
     suspend fun getPerfil(): Response<Usuario> {
@@ -100,8 +109,8 @@ class MainRepository @Inject constructor(
     // 📅 CITAS
     // ==========================
 
-    suspend fun crearCita(request: CrearCitaRequest) {
-        api.crearCita(request)
+    suspend fun crearCita(request: CrearCitaRequest): Response<Unit> {
+        return api.crearCita(request)
     }
 
     suspend fun obtenerAgendas(
@@ -111,12 +120,8 @@ class MainRepository @Inject constructor(
         return api.obtenerAgendas(establecimientoId, fecha)
     }
 
-    suspend fun misCitas(): Response<List<Cita>> {
-        return api.misCitas()
-    }
-
-    suspend fun getCitas(): List<Cita> {
-        return api.getCitas()
+    suspend fun getMisCitas(): List<CitaResponse> {
+        return api.getMisCitas()
     }
 
     suspend fun citasEmpresa(): Response<List<Cita>> {
@@ -140,7 +145,9 @@ class MainRepository @Inject constructor(
         return api.crearCalificacion(request)
     }
 
-    suspend fun calificacionesEstablecimiento(id: Int): Response<List<Calificacion>> {
+    suspend fun calificacionesEstablecimiento(
+        id: Int
+    ): Response<List<Calificacion>> {
         return api.calificacionesEstablecimiento(id)
     }
 

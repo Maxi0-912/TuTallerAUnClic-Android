@@ -1,6 +1,7 @@
-package com.manuel.tutalleraunclic.di
+package com.manuel.tutalleraunclic.data.di
 
-import com.manuel.tutalleraunclic.data.network.*
+import com.manuel.tutalleraunclic.data.network.ApiService
+import com.manuel.tutalleraunclic.data.network.AuthInterceptor
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -9,45 +10,40 @@ import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import javax.inject.Singleton
-import com.manuel.tutalleraunclic.network.TokenAuthenticator
-import com.manuel.tutalleraunclic.network.AuthApiService
+
 @Module
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
 
+    private const val BASE_URL = "https://unthinkingly-unsoporiferous-brentley.ngrok-free.dev/" // 👈 ajusta si es necesario
+
     @Provides
     @Singleton
     fun provideOkHttp(
-        authInterceptor: AuthInterceptor,
-        tokenAuthenticator: TokenAuthenticator
+        authInterceptor: AuthInterceptor
     ): OkHttpClient {
         return OkHttpClient.Builder()
             .addInterceptor(authInterceptor)
-            .authenticator(tokenAuthenticator)
             .build()
     }
 
     @Provides
     @Singleton
-    fun provideRetrofit(client: OkHttpClient): Retrofit {
+    fun provideRetrofit(
+        okHttpClient: OkHttpClient
+    ): Retrofit {
         return Retrofit.Builder()
-            .baseUrl("https://unthinkingly-unsoporiferous-brentley.ngrok-free.dev/")
-            .client(client)
+            .baseUrl(BASE_URL)
+            .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
     }
 
-    // ✅ Api principal
     @Provides
     @Singleton
-    fun provideApiService(retrofit: Retrofit): ApiService {
+    fun provideApiService(
+        retrofit: Retrofit
+    ): ApiService {
         return retrofit.create(ApiService::class.java)
-    }
-
-    // 🔥 ESTE TE FALTABA
-    @Provides
-    @Singleton
-    fun provideAuthApiService(retrofit: Retrofit): AuthApiService {
-        return retrofit.create(AuthApiService::class.java)
     }
 }

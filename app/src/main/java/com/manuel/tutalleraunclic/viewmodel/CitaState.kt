@@ -1,12 +1,13 @@
 package com.manuel.tutalleraunclic.viewmodel
 
-import com.manuel.tutalleraunclic.data.model.entity.Agenda
+import com.manuel.tutalleraunclic.data.model.response.CitaResponse
 
 data class CitaState(
-    val fechaSeleccionada: String = "",
-    val horaSeleccionada: String? = null, // 🔥 ESTA LÍNEA
-    val agendas: List<Agenda> = emptyList(),
     val isLoading: Boolean = false,
-    val error: String? = null,
-    val success: Boolean = false
+    val horarios: List<String> = emptyList(),
+    val citas: List<CitaResponse> = emptyList(), // 🔥 NUEVO
+    val fechaSeleccionada: String = "",
+    val horaSeleccionada: String? = null,
+    val success: Boolean = false,
+    val error: String? = null
 )

@@ -4,21 +4,18 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.manuel.tutalleraunclic.data.model.request.LoginRequest
-import com.manuel.tutalleraunclic.data.model.response.LoginResponse
 import com.manuel.tutalleraunclic.data.repository.MainRepository
-import com.manuel.tutalleraunclic.data.local.TokenManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class LoginViewModel @Inject constructor(
-    private val repository: MainRepository,
-    private val tokenManager: TokenManager
+    private val repository: MainRepository
 ) : ViewModel() {
 
     val loading = MutableLiveData(false)
-    val error = MutableLiveData<String?>(null) // ✅ nullable
+    val error = MutableLiveData<String?>(null)
     val success = MutableLiveData(false)
 
     fun login(username: String, password: String) {
@@ -39,20 +36,18 @@ class LoginViewModel @Inject constructor(
                 if (response.isSuccessful) {
                     val body = response.body()
 
-                    if (body != null) {
-                        tokenManager.saveTokens(
-                            body.access,
-                            body.refresh
-                        )
+                    if (body != null && !body.access.isNullOrEmpty()) {
+
+                        // 🔥 GUARDAR TOKEN CORRECTO
+                        repository.saveToken(body.access)
+
                         success.value = true
                     } else {
-                        error.value = "Body vacío"
+                        error.value = "Respuesta inválida"
                     }
                 } else {
-                    error.value = "Error en login"
+                    error.value = "Credenciales incorrectas"
                 }
-
-                success.value = true
 
             } catch (e: Exception) {
                 error.value = "Error: ${e.message}"
@@ -63,6 +58,8 @@ class LoginViewModel @Inject constructor(
     }
 
     fun logout() {
-        tokenManager.clear()
+        viewModelScope.launch {
+            repository.logout() // 🔥 CORRECTO (suspend)
+        }
     }
 }
