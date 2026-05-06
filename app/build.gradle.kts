@@ -7,21 +7,27 @@ plugins {
 
 android {
     namespace = "com.manuel.tutalleraunclic"
-    compileSdk = 34 // 🔥 BAJAMOS para evitar errores con Hilt
+    compileSdk = 34
 
     defaultConfig {
         applicationId = "com.manuel.tutalleraunclic"
         minSdk = 24
-        targetSdk = 34 // 🔥 IMPORTANTE
+        targetSdk = 34
         versionCode = 1
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // URL base del backend Django. Cambia según entorno:
+        // Emulador → "http://10.0.2.2:8000/"
+        // Dispositivo físico (misma red) → "http://192.168.X.X:8000/"
+        // Producción → "https://tu-dominio.com/"
+        buildConfigField("String", "BASE_URL", "\"https://unthinkingly-unsoporiferous-brentley.ngrok-free.dev/\"")
     }
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = false // luego lo activas en producción real
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -40,6 +46,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     composeOptions {
@@ -49,14 +56,10 @@ android {
 
 dependencies {
 
-    implementation("androidx.datastore:datastore-preferences:1.0.0")
+    implementation("com.google.firebase:firebase-messaging:23.4.0")
 
-    implementation("androidx.compose.runtime:runtime-livedata:1.6.0")
-
-    // 🔥 HILT (clave)
-    implementation("com.google.dagger:hilt-android:2.51.1")
-    kapt("com.google.dagger:hilt-compiler:2.51.1")
-    implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
+    // 🔥 BOM (UNA SOLA VEZ)
+    implementation(platform("androidx.compose:compose-bom:2024.04.01"))
 
     // 🔥 CORE
     implementation("androidx.core:core-ktx:1.12.0")
@@ -64,21 +67,28 @@ dependencies {
     implementation("androidx.activity:activity-compose:1.8.2")
 
     // 🔥 COMPOSE
-    implementation(platform("androidx.compose:compose-bom:2024.02.01"))
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
-    implementation("androidx.compose.material3:material3:1.2.1")
-    implementation(platform("androidx.compose:compose-bom:2024.02.01"))
-
-
+    implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-extended")
+
+    // 🔥 ESTE TE FALTABA (CLAVE)
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.7.0")
+
+    // 🔥 VIEWMODEL
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
 
     // 🔥 NAVIGATION
     implementation("androidx.navigation:navigation-compose:2.7.7")
 
-    // 🔥 VIEWMODEL
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
+    // 🔥 HILT
+    implementation("com.google.dagger:hilt-android:2.51.1")
+    kapt("com.google.dagger:hilt-compiler:2.51.1")
+    implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
+
+    // 🔥 DATASTORE
+    implementation("androidx.datastore:datastore-preferences:1.0.0")
 
     // 🔥 COROUTINES
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
@@ -94,11 +104,9 @@ dependencies {
     implementation("com.google.android.gms:play-services-maps:18.2.0")
     implementation("com.google.android.gms:play-services-location:21.0.1")
 
-    // 🔥 RETROFIT
+    // 🔥 NETWORK
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
-
-    // 🔥 OKHTTP
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
 
@@ -106,7 +114,8 @@ dependencies {
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
-    androidTestImplementation(platform("androidx.compose:compose-bom:2024.02.01"))
+
+    androidTestImplementation(platform("androidx.compose:compose-bom:2024.04.01"))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
 
     // 🔥 DEBUG

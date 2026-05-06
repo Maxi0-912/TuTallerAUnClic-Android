@@ -1,52 +1,63 @@
 package com.manuel.tutalleraunclic.ui.theme
 
-import android.app.Activity
-import android.os.Build
-import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
-import androidx.compose.material3.lightColorScheme
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
-
-private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
-)
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.graphics.Color
 
 private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
+    primary            = Primary,
+    secondary          = Secondary,
+    tertiary           = Accent,
+    background         = Background,
+    surface            = Surface,
+    surfaceVariant     = Color(0xFFE8EEF7),
+    outline            = Color(0xFFCBD5E1),
+    onPrimary          = Color.White,
+    onSecondary        = Color.White,
+    onTertiary         = Color.Black,
+    onBackground       = TextPrimary,
+    onSurface          = TextPrimary,
+    onSurfaceVariant   = TextSecondary,
+    error              = Color(0xFFDC2626),
 )
+
+private val DarkColorScheme = darkColorScheme(
+    primary            = DarkPrimary,
+    secondary          = DarkSecondary,
+    tertiary           = DarkTertiary,
+    background         = DarkBackground,
+    surface            = DarkSurface,
+    surfaceVariant     = DarkSurfaceVariant,
+    outline            = DarkOutline,
+    onPrimary          = Color(0xFF0B1120),
+    onSecondary        = Color(0xFF0B1120),
+    onTertiary         = Color(0xFF0B1120),
+    onBackground       = DarkOnBackground,
+    onSurface          = DarkOnSurface,
+    onSurfaceVariant   = Color(0xFF94A3B8),
+    error              = Color(0xFFF87171),
+)
+
+// CompositionLocals para acceder al toggle desde cualquier composable
+val LocalIsDarkMode   = compositionLocalOf { false }
+val LocalToggleTheme  = compositionLocalOf<() -> Unit> { {} }
 
 @Composable
 fun TuTallerAUnClicTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = true,
+    darkTheme: Boolean = false,
+    onToggleTheme: () -> Unit = {},
     content: @Composable () -> Unit
 ) {
+    val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
 
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) {
-                dynamicDarkColorScheme(context)
-            } else {
-                dynamicLightColorScheme(context)
-            }
-        }
-
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
+    CompositionLocalProvider(
+        LocalIsDarkMode  provides darkTheme,
+        LocalToggleTheme provides onToggleTheme,
+    ) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography  = Typography,
+            content     = content
+        )
     }
-
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Typography,
-        content = content
-    )
 }

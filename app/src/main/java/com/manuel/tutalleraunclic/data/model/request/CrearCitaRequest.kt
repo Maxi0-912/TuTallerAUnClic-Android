@@ -5,5 +5,6 @@ data class CrearCitaRequest(
     val fecha: String,
     val hora: String,
     val servicio: Int,
-    val descripcion: String
+    val placa: String,
+    val descripcion: String? = null,
 )

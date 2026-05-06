@@ -2,31 +2,31 @@ package com.manuel.tutalleraunclic.data.network
 
 import com.manuel.tutalleraunclic.data.model.entity.*
 import com.manuel.tutalleraunclic.data.model.request.*
-import com.manuel.tutalleraunclic.data.model.response.LoginResponse
 import retrofit2.Response
 import retrofit2.http.*
 import com.manuel.tutalleraunclic.data.model.response.CitaResponse
+import com.manuel.tutalleraunclic.data.model.response.LoginResponse
 
 interface ApiService {
 
     // ==========================
-    // 🔐 AUTH
+    // AUTH
     // ==========================
 
-    @POST("auth/login/")
+    @POST("usuarios/login/")
     suspend fun login(
         @Body request: LoginRequest
     ): Response<LoginResponse>
 
-    @POST("auth/register/")
+    @POST("usuarios/register/")
     suspend fun register(
         @Body request: RegisterRequest
     ): Response<Usuario>
 
-    @GET("auth/perfil/")
+    @GET("usuarios/perfil/")
     suspend fun getPerfil(): Response<Usuario>
 
-    @PUT("auth/perfil/")
+    @PATCH("usuarios/perfil/update/")
     suspend fun actualizarPerfil(
         @Body data: UpdateUserRequest
     ): Response<Usuario>
@@ -34,42 +34,48 @@ interface ApiService {
     @DELETE("auth/eliminar/")
     suspend fun eliminarCuenta(): Response<Unit>
 
+    @Multipart
+    @PATCH("usuarios/perfil/update/")
+    suspend fun actualizarPerfilConFoto(
+        @Part("username")   username:  okhttp3.RequestBody?,
+        @Part("first_name") firstName: okhttp3.RequestBody?,
+        @Part("last_name")  lastName:  okhttp3.RequestBody?,
+        @Part("email")      email:     okhttp3.RequestBody?,
+        @Part("telefono")   telefono:  okhttp3.RequestBody?,
+        @Part foto: okhttp3.MultipartBody.Part?
+    ): Response<Usuario>
+
     // ==========================
-    // 🏢 ESTABLECIMIENTOS + GEO
+    // ESTABLECIMIENTOS
     // ==========================
+
+    @GET("establecimientos/")
+    suspend fun getEstablecimientos(): Response<List<Establecimiento>>
+
     @GET("establecimientos/{id}/")
     suspend fun getDetalleEstablecimiento(
         @Path("id") id: Int
     ): Response<Establecimiento>
 
+    @GET("establecimientos/{id}/resenas/")
+    suspend fun getResenasEstablecimiento(
+        @Path("id") id: Int
+    ): Response<List<Calificacion>>
 
+    @GET("establecimientos/{id}/citas-ocupadas/")
+    suspend fun getCitasOcupadas(
+        @Path("id") establecimientoId: Int,
+        @Query("fecha") fecha: String
+    ): Response<List<String>>
 
-    @GET("recomendados/")
-    suspend fun getRecomendados(
-        @Query("lat") lat: String,
-        @Query("lng") lng: String
-    ): Response<List<Establecimiento>>
-
-    @GET("establecimientos/")
-    suspend fun getEstablecimientos(
-        @Query("lat") lat: Double,
-        @Query("lng") lng: Double
-    ): Response<List<Establecimiento>>
-
-    @POST("establecimientos/")
+    @POST("establecimientos/crear/")
     suspend fun crearEstablecimiento(
         @Body request: EstablecimientoRequest
     ): Response<Establecimiento>
 
     // ==========================
-    // 🛠 SERVICIOS
+    // SERVICIOS
     // ==========================
-
-    @GET("agendas/{establecimiento_id}/")
-    suspend fun obtenerAgendas(
-        @Path("establecimiento_id") establecimientoId: Int,
-        @Query("fecha") fecha: String
-    ): List<Agenda>
 
     @GET("servicios/establecimiento/{id}/")
     suspend fun getServicios(
@@ -77,58 +83,52 @@ interface ApiService {
     ): Response<List<Servicio>>
 
     // ==========================
-    // 🚗 VEHÍCULOS
+    // VEHICULOS
     // ==========================
 
-    @GET("vehiculos/")
+    @GET("usuarios/mis-vehiculos/")
     suspend fun misVehiculos(): Response<List<Vehiculo>>
 
-    @POST("vehiculos/crear/")
+    @POST("usuarios/mis-vehiculos/crear/")
     suspend fun crearVehiculo(
         @Body request: VehiculoRequest
     ): Response<Vehiculo>
 
-    // ==========================
-    // 📅 CITAS
-    // ==========================
-
-    @POST("citas/")
-    suspend fun crearCita(@Body cita: CrearCitaRequest): Response<Unit>
-
-    @GET("citas/mis/")
-    suspend fun getMisCitas(): List<CitaResponse>
-
-    @GET("citas/empresa/")
-    suspend fun citasEmpresa(): Response<List<Cita>>
-
-    @PATCH("citas/{id}/estado/")
-    suspend fun cambiarEstadoCita(
-        @Path("id") id: Int,
-        @Body request: EstadoRequest
+    @DELETE("usuarios/mis-vehiculos/{placa}/")
+    suspend fun eliminarVehiculo(
+        @Path("placa") placa: String
     ): Response<Unit>
 
+    // ==========================
+    // CITAS
+    // ==========================
 
-    @GET("horarios-disponibles/")
-    suspend fun getHorariosDisponibles(
-        @Query("establecimiento") establecimientoId: Int,
-        @Query("fecha") fecha: String
-    ): List<String>
+    @GET("citas/mis-citas/")
+    suspend fun getMisCitas(): Response<List<CitaResponse>>
 
+    @POST("citas/crear/")
+    suspend fun crearCita(
+        @Body request: CrearCitaRequest
+    ): Response<CitaResponse>
 
-    @DELETE("citas/{id}/")
-    suspend fun eliminarCita(@Path("id") id: Int): Response<Unit>
-
-
-    @PUT("citas/{id}/editar/")
+    @PATCH("citas/{id}/editar/")
     suspend fun editarCita(
         @Path("id") id: Int,
-        @Body request: CrearCitaRequest
-    )
+        @Body request: ActualizarCitaRequest
+    ): Response<CitaResponse>
 
+    @DELETE("citas/{id}/")
+    suspend fun eliminarCita(
+        @Path("id") id: Int
+    ): Response<Unit>
 
+    @GET("citas/{id}/")
+    suspend fun getCita(
+        @Path("id") id: Int
+    ): Response<CitaResponse>
 
     // ==========================
-    // ⭐ CALIFICACIONES
+    // CALIFICACIONES
     // ==========================
 
     @POST("calificaciones/crear/")
@@ -142,7 +142,7 @@ interface ApiService {
     ): Response<List<Calificacion>>
 
     // ==========================
-    // 🔔 NOTIFICACIONES
+    // NOTIFICACIONES
     // ==========================
 
     @GET("notificaciones/")
@@ -154,9 +154,9 @@ interface ApiService {
     ): Response<Unit>
 
     // ==========================
-    // 📊 DASHBOARD
+    // DASHBOARD
     // ==========================
 
-    @GET("dashboard/empresa/")
+    @GET("empresa/dashboard/")
     suspend fun dashboardEmpresa(): Response<Dashboard>
 }

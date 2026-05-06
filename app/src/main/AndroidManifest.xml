@@ -10,6 +10,7 @@
     <!-- Permisos de Notificacion -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
+
     <application
         android:name=".MyApp"
         android:allowBackup="true"

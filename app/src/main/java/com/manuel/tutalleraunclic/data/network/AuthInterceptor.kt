@@ -1,24 +1,26 @@
 package com.manuel.tutalleraunclic.data.network
 
-import com.manuel.tutalleraunclic.data.local.TokenManager
 import okhttp3.Interceptor
 import okhttp3.Response
 import javax.inject.Inject
+import com.manuel.tutalleraunclic.data.local.TokenManager
 
 class AuthInterceptor @Inject constructor(
     private val tokenManager: TokenManager
 ) : Interceptor {
 
+    private val publicPaths = listOf("usuarios/login/", "usuarios/register/")
+
     override fun intercept(chain: Interceptor.Chain): Response {
+        val url = chain.request().url.encodedPath
+        val isPublic = publicPaths.any { url.contains(it) }
 
-        val originalRequest = chain.request()
+        val token = tokenManager.getAccessToken()
 
-        val token = tokenManager.getToken() // ✅ CORRECTO
+        val requestBuilder = chain.request().newBuilder()
 
-        val requestBuilder = originalRequest.newBuilder()
-
-        if (!token.isNullOrEmpty()) {
-            requestBuilder.addHeader("Authorization", "Bearer $token")
+        if (!isPublic && !token.isNullOrEmpty()) {
+            requestBuilder.header("Authorization", "Bearer $token")
         }
 
         return chain.proceed(requestBuilder.build())

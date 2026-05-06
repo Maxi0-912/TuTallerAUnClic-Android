@@ -6,7 +6,8 @@ data class Cita(
     val id: Int,
     val fecha: String,
     val hora: String,
-    val servicio: String,
-    val establecimiento: String,
+    val descripcion: String?, // 👈 AGREGA ESTO
+    val establecimiento: Int,
+    val servicio: Int,
     val estado: String
 )

@@ -7,5 +7,11 @@ data class EstablecimientoUI(
     val rating: Double,
     val totalReviews: Int,
     val direccion: String,
-    val precioDesde: String
-)
+    val precioDesde: String,
+    val latitud: Double = 0.0,
+    val longitud: Double = 0.0,
+    val distanciaKm: Double? = null,
+    val tipoNombre: String? = null,
+) {
+    val tipo: TipoEstablecimiento get() = TipoEstablecimiento.from(tipoNombre)
+}

@@ -1,10 +1,11 @@
 package com.manuel.tutalleraunclic.viewmodel
 
-import android.util.Log
-import androidx.lifecycle.*
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.manuel.tutalleraunclic.data.model.request.UpdateUserRequest
 import com.manuel.tutalleraunclic.data.repository.MainRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -13,48 +14,37 @@ class MainViewModel @Inject constructor(
     private val repository: MainRepository
 ) : ViewModel() {
 
-    // 🔄 Estado de carga
-    private val _loading = MutableLiveData(false)
-    val loading: LiveData<Boolean> = _loading
+    // ---------------- STATE ----------------
 
-    // ✅ Éxito
-    private val _success = MutableLiveData<Boolean>()
-    val success: LiveData<Boolean> = _success
+    private val _uiState = MutableStateFlow(MainUiState())
+    val uiState: StateFlow<MainUiState> = _uiState
 
-    // ❌ Error
-    private val _error = MutableLiveData<String?>()
-    val error: LiveData<String?> = _error
+    private val _uiEvent = MutableSharedFlow<UiEvent>()
+    val uiEvent: SharedFlow<UiEvent> = _uiEvent
 
-    // 🚀 ACTUALIZAR PERFIL
+    // ---------------- ACTUALIZAR PERFIL ----------------
+
     fun actualizarPerfil(data: UpdateUserRequest) {
         viewModelScope.launch {
 
-            _error.value = null
+            _uiState.update { it.copy(isLoading = true) }
 
-            try {
-                _loading.value = true
-
-                // 🔥 SIN token manual → interceptor lo maneja
-                val response = repository.actualizarPerfil(data)
-
-                if (response.isSuccessful) {
-                    _success.value = true
-                } else {
-                    _error.value = "Error ${response.code()}"
+            repository.actualizarPerfil(data)
+                .onSuccess {
+                    _uiState.update { it.copy(isLoading = false, success = true) }
+                    _uiEvent.emit(UiEvent.ShowMessage("Perfil actualizado"))
                 }
-
-            } catch (e: Exception) {
-                _error.value = "Error de red: ${e.message}"
-                Log.e("MainViewModel", "actualizarPerfil", e)
-            } finally {
-                _loading.value = false
-            }
+                .onFailure { e ->
+                    val msg = e.message ?: "Error al actualizar"
+                    _uiState.update { it.copy(isLoading = false) }
+                    _uiEvent.emit(UiEvent.ShowError(msg))
+                }
         }
     }
 
-    // 🔄 Resetear estados (útil en UI)
+    // ---------------- RESET ----------------
+
     fun resetState() {
-        _success.value = false
-        _error.value = null
+        _uiState.value = MainUiState()
     }
 }

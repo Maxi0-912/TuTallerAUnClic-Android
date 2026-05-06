@@ -1,8 +1,7 @@
 package com.manuel.tutalleraunclic.data.model.entity
 
 data class Establecimiento(
-
-    val id: Int, // 🔥 CORRECTO
+    val id: Int,
     val nombre: String,
     val direccion: String,
     val telefono: String,
@@ -12,6 +11,11 @@ data class Establecimiento(
     val latitud: String,
     val longitud: String,
     val propietario: Int,
+    val propietario_nombre: String? = null,
     val tipo: Int,
-    val calificacion: Double,
+    val tipo_nombre: String? = null,
+    val foto: String? = null,
+    val foto_url: String? = null,
+    val fotos_galeria: List<String>? = null,
+    val promedio_calificacion: Double? = null,
 )

@@ -22,13 +22,27 @@ fun NavGraphBuilder.authGraph(navController: NavController) {
         )
     }
 
-    // 📝 REGISTER (ejemplo)
+    // 📝 REGISTER
     composable(Routes.REGISTER) {
 
         val viewModel: RegisterViewModel = hiltViewModel()
 
         RegisterScreen(
-            navController = navController,
+            onNavigateToHome = {
+                navController.navigate(Routes.ESTABLECIMIENTOS) {
+                    popUpTo(Routes.LOGIN) { inclusive = true }
+                    launchSingleTop = true
+                }
+            },
+            onNavigateToEmpresa = {
+                navController.navigate(Routes.EMPRESA_HOME) {
+                    popUpTo(Routes.LOGIN) { inclusive = true }
+                    launchSingleTop = true
+                }
+            },
+            onNavigateToLogin = {
+                navController.popBackStack()
+            },
             viewModel = viewModel
         )
     }

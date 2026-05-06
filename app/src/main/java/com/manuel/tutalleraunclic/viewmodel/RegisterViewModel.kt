@@ -1,12 +1,12 @@
 package com.manuel.tutalleraunclic.viewmodel
 
-import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.manuel.tutalleraunclic.data.model.request.LoginRequest
 import com.manuel.tutalleraunclic.data.model.request.RegisterRequest
 import com.manuel.tutalleraunclic.data.repository.MainRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -15,57 +15,73 @@ class RegisterViewModel @Inject constructor(
     private val repository: MainRepository
 ) : ViewModel() {
 
-    var loading = mutableStateOf(false)
-    var error = mutableStateOf<String?>(null)
+    private val _uiState = MutableStateFlow(RegisterUiState())
+    val uiState: StateFlow<RegisterUiState> = _uiState.asStateFlow()
 
+    private val _uiEvent = MutableSharedFlow<UiEvent>()
+    val uiEvent: SharedFlow<UiEvent> = _uiEvent.asSharedFlow()
+
+    /** @param rol  "cliente" → 2  |  "empresa" → 3 */
     fun register(
         username: String,
         email: String,
         password: String,
-        onSuccess: () -> Unit
+        rol: String,
+        firstName: String = "",
+        lastName: String = "",
+        telefono: String = ""
     ) {
         viewModelScope.launch {
 
-            loading.value = true
-            error.value = null
-
-            try {
-                // 🔥 1. REGISTRO
-                val registerResponse = repository.register(
-                    RegisterRequest(username, email, password)
-                )
-
-                if (!registerResponse.isSuccessful) {
-                    error.value = "Error al registrar"
-                    loading.value = false
-                    return@launch
-                }
-
-                // 🔥 2. LOGIN AUTOMÁTICO
-                val loginResponse = repository.login(
-                    LoginRequest(username, password)
-                )
-
-                if (loginResponse.isSuccessful) {
-
-                    val token = loginResponse.body()?.access
-
-                    if (token != null) {
-                        repository.saveToken(token) // 🔥 IMPORTANTE
-                        onSuccess()
-                    } else {
-                        error.value = "Token inválido"
-                    }
-
-                } else {
-                    error.value = "Error al iniciar sesión"
-                }
-
-            } catch (e: Exception) {
-                error.value = "Error de conexión"
+            // ── Validaciones ────────────────────────────────────────────────
+            if (username.isBlank() || email.isBlank() || password.isBlank()) {
+                _uiEvent.emit(UiEvent.ShowError("Usuario, correo y contraseña son obligatorios"))
+                return@launch
+            }
+            if (password.length < 8) {
+                _uiEvent.emit(UiEvent.ShowError("La contraseña debe tener al menos 8 caracteres"))
+                return@launch
+            }
+            if (!email.contains('@')) {
+                _uiEvent.emit(UiEvent.ShowError("Ingresa un correo electrónico válido"))
+                return@launch
             }
 
-            loading.value = false
+            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+
+            val rolInt = if (rol == "empresa") 3 else 2
+
+            val request = RegisterRequest(
+                username   = username.trim(),
+                email      = email.trim(),
+                password   = password.trim(),
+                rol        = rolInt,
+                first_name = firstName.trim(),
+                last_name  = lastName.trim(),
+                telefono   = telefono.trim()
+            )
+
+            // ── Registro ─────────────────────────────────────────────────────
+            repository.register(request)
+                .onSuccess {
+                    // Auto-login con las mismas credenciales
+                    repository.login(LoginRequest(username.trim(), password.trim()))
+                        .onSuccess {
+                            _uiState.update {
+                                it.copy(isLoading = false, success = true, rolRegistrado = rol)
+                            }
+                        }
+                        .onFailure { e ->
+                            val msg = e.message ?: "Error al iniciar sesión automáticamente"
+                            _uiState.update { it.copy(isLoading = false, errorMessage = msg) }
+                            _uiEvent.emit(UiEvent.ShowError(msg))
+                        }
+                }
+                .onFailure { e ->
+                    val msg = e.message ?: "Error al registrar"
+                    _uiState.update { it.copy(isLoading = false, errorMessage = msg) }
+                    _uiEvent.emit(UiEvent.ShowError(msg))
+                }
         }
     }
 }

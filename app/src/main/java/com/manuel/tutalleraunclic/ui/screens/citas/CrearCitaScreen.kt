@@ -1,189 +1,262 @@
 package com.manuel.tutalleraunclic.ui.screens.citas
 
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material3.*
-import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.*
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.manuel.tutalleraunclic.viewmodel.CitaViewModel
-import com.manuel.tutalleraunclic.data.model.entity.Agenda
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import com.manuel.tutalleraunclic.viewmodel.UiEvent
+import kotlinx.coroutines.flow.collectLatest
+import java.util.Calendar
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CrearCitaScreen(
-    viewModel: CitaViewModel,
     establecimientoId: Int,
-    servicioId: Int
+    servicioId: Int,
+    onSuccess: () -> Unit,
+    onBack: () -> Unit = {},
+    viewModel: CitaViewModel = hiltViewModel()
 ) {
 
-    val state by viewModel.state.collectAsState()
-    var comentario by remember { mutableStateOf("") }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val interactionSource = remember { MutableInteractionSource() }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp)
-    ) {
+    // INIT
+    LaunchedEffect(Unit) {
+        viewModel.setIds(establecimientoId, servicioId)
+    }
 
-        // 🔥 HEADER
-        Text(
-            text = "Agendar cita",
-            style = MaterialTheme.typography.headlineMedium
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // =========================
-        // 📅 FECHAS
-        // =========================
-        Text(
-            text = "Selecciona una fecha",
-            style = MaterialTheme.typography.titleMedium
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-
-            listOf("2026-04-01", "2026-04-02", "2026-04-03").forEach { fecha ->
-
-                val isSelected = fecha == state.fechaSeleccionada
-
-                FilterChip(
-                    selected = isSelected,
-                    onClick = {
-                        viewModel.seleccionarFecha(fecha, establecimientoId)
-                    },
-                    label = { Text(fecha) },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = MaterialTheme.colorScheme.primary,
-                        selectedLabelColor = Color.White
-                    )
-                )
+    // EVENTOS
+    LaunchedEffect(Unit) {
+        viewModel.uiEvent.collectLatest { event ->
+            when (event) {
+                is UiEvent.ShowError -> snackbarHostState.showSnackbar(event.message)
+                is UiEvent.ShowMessage -> {
+                    snackbarHostState.showSnackbar(event.message)
+                    onSuccess()
+                }
             }
         }
+    }
 
-        Spacer(modifier = Modifier.height(20.dp))
+    // ---------------- DATE PICKER ----------------
+    val datePickerState = rememberDatePickerState()
+    var showDatePicker by remember { mutableStateOf(false) }
 
-        // =========================
-        // ⏳ LOADING
-        // =========================
-        if (state.isLoading) {
-            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-            Spacer(modifier = Modifier.height(16.dp))
-        }
+    if (showDatePicker) {
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    showDatePicker = false
 
-        // =========================
-        // ⏰ HORAS
-        // =========================
-        Text(
-            text = "Horas disponibles",
-            style = MaterialTheme.typography.titleMedium
-        )
+                    datePickerState.selectedDateMillis?.let { millis ->
 
-        Spacer(modifier = Modifier.height(8.dp))
+                        val calendar = Calendar.getInstance().apply {
+                            timeInMillis = millis
+                        }
 
-        if (state.horarios.isEmpty() && state.fechaSeleccionada.isNotBlank()) {
-            Text(
-                text = "No hay horarios disponibles",
-                color = Color.Gray
-            )
-        }
+                        val year = calendar.get(Calendar.YEAR)
+                        val month = calendar.get(Calendar.MONTH) + 1
+                        val day = calendar.get(Calendar.DAY_OF_MONTH)
 
-        FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
+                        val fecha = "%04d-%02d-%02d".format(year, month, day)
 
-            state.horarios.forEach { hora ->
-
-                val isSelected = hora == state.horaSeleccionada
-
-                FilterChip(
-                    selected = isSelected,
-                    onClick = {
-                        viewModel.seleccionarHora(hora)
-                    },
-                    label = { Text(hora) },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = MaterialTheme.colorScheme.primary,
-                        selectedLabelColor = Color.White
-                    )
-                )
+                        viewModel.seleccionarFecha(fecha)
+                    }
+                }) {
+                    Text("Aceptar")
+                }
             }
+        ) {
+            DatePicker(state = datePickerState)
         }
+    }
 
-        Spacer(modifier = Modifier.height(20.dp))
+    // ---------------- TIME PICKER ----------------
+    val timePickerState = rememberTimePickerState()
+    var showTimePicker by remember { mutableStateOf(false) }
 
-        // =========================
-        // 📝 COMENTARIO
-        // =========================
-        Text(
-            text = "Describe lo que necesitas",
-            style = MaterialTheme.typography.titleMedium
-        )
+    if (showTimePicker) {
+        AlertDialog(
+            onDismissRequest = { showTimePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    showTimePicker = false
 
-        Spacer(modifier = Modifier.height(8.dp))
+                    val hora = "%02d:%02d:00".format(
+                        timePickerState.hour,
+                        timePickerState.minute
+                    )
 
-        OutlinedTextField(
-            value = comentario,
-            onValueChange = { comentario = it },
-            placeholder = { Text("Ej: lavado completo + aspirado interno") },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(120.dp),
-            maxLines = 4
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // =========================
-        // 🚀 BOTÓN
-        // =========================
-        Button(
-            onClick = {
-                viewModel.crearCita(
-                    establecimientoId = establecimientoId,
-                    servicioId = servicioId,
-                    descripcion = comentario.ifBlank { "Sin comentario" }
-                )
+                    viewModel.onHoraChange(hora)
+                }) {
+                    Text("Aceptar")
+                }
             },
-            enabled = state.fechaSeleccionada.isNotBlank() && state.horaSeleccionada != null,
+            text = {
+                TimePicker(state = timePickerState)
+            }
+        )
+    }
+
+    // ---------------- UI ----------------
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        topBar = {
+            TopAppBar(
+                title = { Text("Agendar Cita") },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
+                    }
+                }
+            )
+        }
+    ) { padding ->
+
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .height(50.dp)
+                .padding(padding)
+                .fillMaxSize()
+                .padding(16.dp)
         ) {
-            Text("Agendar cita")
-        }
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // =========================
-        // ❌ ERROR
-        // =========================
-        state.error?.let {
             Text(
-                text = it,
-                color = Color.Red
+                text = "Programa tu servicio",
+                style = MaterialTheme.typography.titleLarge
             )
-        }
 
-        // =========================
-        // ✅ SUCCESS
-        // =========================
-        if (state.success) {
-            Text(
-                text = "Cita creada correctamente ✅",
-                color = Color(0xFF2E7D32)
-            )
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // CARD PRINCIPAL
+            Card(
+                shape = RoundedCornerShape(24.dp),
+                elevation = CardDefaults.cardElevation(10.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+
+                Column(modifier = Modifier.padding(20.dp)) {
+
+                    Text(
+                        "Detalles del servicio",
+                        style = MaterialTheme.typography.titleMedium
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // PLACA
+                    OutlinedTextField(
+                        value = viewModel.placa,
+                        onValueChange = viewModel::onPlacaChange,
+                        label = { Text("Placa del vehículo") },
+                        leadingIcon = { Icon(Icons.Default.DirectionsCar, null) },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(14.dp),
+                        singleLine = true
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // DESCRIPCIÓN
+                    OutlinedTextField(
+                        value = viewModel.descripcion,
+                        onValueChange = viewModel::onDescripcionChange,
+                        label = { Text("¿Qué necesita tu vehículo? (opcional)") },
+                        leadingIcon = { Icon(Icons.Default.Build, null) },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(14.dp),
+                        maxLines = 3
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // FECHA (tipo botón moderno)
+                    ElevatedCard(
+                        onClick = { showDatePicker = true },
+                        shape = RoundedCornerShape(14.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                viewModel.fecha.ifEmpty { "Seleccionar fecha" }
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // HORA (tipo botón moderno)
+                    ElevatedCard(
+                        onClick = { showTimePicker = true },
+                        shape = RoundedCornerShape(14.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row {
+                                Icon(Icons.Default.AccessTime, null)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    viewModel.hora.ifEmpty { "Seleccionar hora" }
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // ANIMACIÓN
+                    AnimatedVisibility(visible = viewModel.fecha.isNotEmpty()) {
+                        Text(
+                            "Fecha seleccionada ✔",
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // BOTÓN
+            Button(
+                onClick = { viewModel.crearCita() },
+                enabled = !viewModel.isSaving,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(60.dp),
+                shape = RoundedCornerShape(18.dp)
+            ) {
+
+                if (viewModel.isSaving) {
+                    CircularProgressIndicator(
+                        color = Color.White,
+                        strokeWidth = 2.dp,
+                        modifier = Modifier.size(22.dp)
+                    )
+                } else {
+                    Text("Confirmar Cita")
+                }
+            }
         }
     }
 }

@@ -8,38 +8,41 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import com.manuel.tutalleraunclic.ui.components.CitaItem
 import com.manuel.tutalleraunclic.viewmodel.MisCitasViewModel
 import com.manuel.tutalleraunclic.viewmodel.CitasState
 import kotlinx.coroutines.launch
 import androidx.navigation.NavController
+import com.manuel.tutalleraunclic.core.navigation.Routes
 
 @OptIn(ExperimentalMaterial3Api::class)
-
 @Composable
 fun MisCitasScreen(
     viewModel: MisCitasViewModel = hiltViewModel(),
     navController: NavController
-){
-
+) {
     val state by viewModel.state.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
-
-    // 🔥 Estado global correcto
     var citaAEliminar by remember { mutableStateOf<Int?>(null) }
+    val lifecycleOwner = LocalLifecycleOwner.current
 
-    LaunchedEffect(Unit) {
-        viewModel.obtenerCitas()
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) viewModel.obtenerCitas()
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Mis citas") }
-            )
+            TopAppBar(title = { Text("Mis citas") })
         },
         snackbarHost = {
             SnackbarHost(hostState = snackbarHostState)
@@ -52,60 +55,53 @@ fun MisCitasScreen(
                 .fillMaxSize()
         ) {
 
-            // 🔥 DIALOG GLOBAL (correcto)
             if (citaAEliminar != null) {
                 AlertDialog(
                     onDismissRequest = { citaAEliminar = null },
-
                     confirmButton = {
                         Button(onClick = {
                             viewModel.eliminarCita(citaAEliminar!!)
-
                             scope.launch {
-                                snackbarHostState.showSnackbar("Cita eliminada correctamente")
+                                snackbarHostState.showSnackbar("Cita cancelada")
                             }
-
                             citaAEliminar = null
                         }) {
-                            Text("Sí, eliminar")
+                            Text("Sí, cancelar")
                         }
                     },
-
                     dismissButton = {
-                        OutlinedButton(
-                            onClick = { citaAEliminar = null }
-                        ) {
-                            Text("Cancelar")
+                        OutlinedButton(onClick = { citaAEliminar = null }) {
+                            Text("Volver")
                         }
                     },
-
-                    title = { Text("Eliminar cita") },
-                    text = { Text("¿Seguro que deseas eliminar esta cita?") }
+                    title = { Text("Cancelar cita") },
+                    text = { Text("¿Seguro que deseas cancelar esta cita?") }
                 )
             }
 
             when (state) {
 
                 is CitasState.Loading -> {
-                    CircularProgressIndicator(
-                        modifier = Modifier.align(Alignment.Center)
-                    )
+                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                 }
 
                 is CitasState.Error -> {
-                    Text(
-                        text = "Error al cargar citas",
-                        modifier = Modifier.align(Alignment.Center)
-                    )
+                    Column(
+                        modifier = Modifier.align(Alignment.Center),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text("Error al cargar citas")
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Button(onClick = { viewModel.obtenerCitas() }) {
+                            Text("Reintentar")
+                        }
+                    }
                 }
 
                 is CitasState.Success -> {
-
                     val citas = (state as CitasState.Success).citas
 
                     if (citas.isEmpty()) {
-
-                        // 🧊 EMPTY STATE PRO
                         Column(
                             modifier = Modifier
                                 .fillMaxSize()
@@ -117,37 +113,32 @@ fun MisCitasScreen(
                                 text = "🚗 No tienes citas aún",
                                 style = MaterialTheme.typography.titleMedium
                             )
-
                             Spacer(modifier = Modifier.height(8.dp))
-
                             Text(
                                 text = "Agenda tu primera cita y aparecerá aquí",
                                 style = MaterialTheme.typography.bodyMedium
                             )
                         }
-
                     } else {
-
                         LazyColumn(
                             verticalArrangement = Arrangement.spacedBy(12.dp),
                             contentPadding = PaddingValues(16.dp),
                             modifier = Modifier.fillMaxSize()
                         ) {
-
                             items(
                                 items = citas,
-                                key = { it.id } // 🔥 IMPORTANTE (performance + animaciones)
+                                key = { it.id }
                             ) { cita ->
-
                                 CitaItem(
                                     cita = cita,
-
-                                    onDelete = {
-                                        citaAEliminar = cita.id
-                                    },
-
+                                    onDelete = { citaAEliminar = cita.id },
                                     onEdit = {
                                         navController.navigate("editar_cita/${cita.id}")
+                                    },
+                                    onCalificar = {
+                                        navController.navigate(
+                                            Routes.resena(cita.id, 0)
+                                        )
                                     }
                                 )
                             }

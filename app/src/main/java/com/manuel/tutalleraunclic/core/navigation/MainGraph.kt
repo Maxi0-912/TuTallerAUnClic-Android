@@ -1,9 +1,15 @@
 package com.manuel.tutalleraunclic.core.navigation
 
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.navigation.*
 import androidx.navigation.compose.composable
 import androidx.navigation.NavHostController
 import androidx.hilt.navigation.compose.hiltViewModel
+
+import com.manuel.tutalleraunclic.ui.screens.citas.EditarCitaScreen
 import com.manuel.tutalleraunclic.ui.screens.citas.MisCitasScreen
 import com.manuel.tutalleraunclic.ui.screens.citas.CrearCitaScreen
 import com.manuel.tutalleraunclic.ui.screens.mapa.MapScreen
@@ -26,32 +32,31 @@ fun NavGraphBuilder.mainGraph(navController: NavHostController) {
 
     // 🔹 MAPA
     composable(Routes.MAPA) {
-        MapScreen()
+        MapScreen(navController = navController)
     }
 
-    // 🔹 DETALLE ESTABLECIMIENTO
+    // 🔹 DETALLE ESTABLECIMIENTO (TIPADO CORRECTO)
     composable(
-        route = "${Routes.DETALLE}/{id}",
+        route = Routes.DETALLE_ARG, // 🔥 usa ruta centralizada
         arguments = listOf(
             navArgument("id") {
-                type = NavType.StringType
+                type = NavType.IntType // 🔥 CAMBIO CLAVE
             }
         )
     ) { backStackEntry ->
 
-        val id = requireNotNull(
-            backStackEntry.arguments?.getString("id")
-        ) { "El id del establecimiento es obligatorio" }
+        val establecimientoId =
+            backStackEntry.arguments?.getInt("id") ?: 0
 
         DetalleEstablecimientoScreen(
-            id = id,
+            establecimientoId = establecimientoId, // 🔥 nombre correcto
             navController = navController
         )
     }
 
     // 🔥 CREAR CITA (DINÁMICO)
     composable(
-        route = "${Routes.CITA}/{establecimientoId}/{servicioId}",
+        route = Routes.CITA_ARG,
         arguments = listOf(
             navArgument("establecimientoId") {
                 type = NavType.IntType
@@ -73,8 +78,34 @@ fun NavGraphBuilder.mainGraph(navController: NavHostController) {
         CrearCitaScreen(
             viewModel = viewModel,
             establecimientoId = establecimientoId,
-            servicioId = servicioId
+            servicioId = servicioId,
+            onSuccess = {
+                navController.navigate(Routes.MIS_CITAS) {
+                    popUpTo(Routes.CITA) { inclusive = true }
+                    launchSingleTop = true
+                }
+            }
         )
+    }
+
+    // 🔹 EDITAR CITA
+    composable(
+        route = Routes.EDITAR_CITA_ARG,
+        arguments = listOf(navArgument("citaId") { type = NavType.IntType })
+    ) { backStackEntry ->
+        val citaId = backStackEntry.arguments?.getInt("citaId") ?: 0
+        EditarCitaScreen(
+            citaId = citaId,
+            onSuccess = { navController.popBackStack() },
+            onBack    = { navController.popBackStack() }
+        )
+    }
+
+    // 🔹 EMPRESA HOME
+    composable(Routes.EMPRESA_HOME) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text("Panel de empresa - Próximamente", style = MaterialTheme.typography.titleMedium)
+        }
     }
 
     // 🔹 PERFIL
@@ -82,7 +113,7 @@ fun NavGraphBuilder.mainGraph(navController: NavHostController) {
         PerfilScreen(
             onNavigateToLogin = {
                 navController.navigate(Routes.LOGIN) {
-                    popUpTo(0) { inclusive = true } // 🔥 limpia todo el stack
+                    popUpTo(0) { inclusive = true } // 🔥 limpia stack completo
                 }
             },
             onNavigateToEditarPerfil = {

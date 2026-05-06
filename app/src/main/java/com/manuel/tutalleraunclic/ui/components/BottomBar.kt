@@ -19,65 +19,56 @@ data class BottomItem(
 
 @Composable
 fun BottomBar(
-    navController: NavController
+    navController: NavController,
+    rolNombre: String? = null
 ) {
-
-    val items = listOf(
+    val clienteItems = listOf(
         BottomItem(Routes.ESTABLECIMIENTOS, Icons.Default.Home, "Inicio"),
         BottomItem(Routes.MIS_CITAS, Icons.Default.DateRange, "Citas"),
+        BottomItem(Routes.MAPA, Icons.Default.Map, "Mapa"),
+        BottomItem(Routes.NOTIFICACIONES, Icons.Default.Notifications, "Alertas"),
         BottomItem(Routes.PERFIL, Icons.Default.Person, "Perfil")
     )
+
+    val empresaItems = listOf(
+        BottomItem(Routes.EMPRESA_HOME, Icons.Default.Dashboard, "Dashboard"),
+        BottomItem(Routes.MIS_CITAS, Icons.Default.DateRange, "Citas"),
+        BottomItem(Routes.NOTIFICACIONES, Icons.Default.Notifications, "Alertas"),
+        BottomItem(Routes.PERFIL, Icons.Default.Person, "Perfil")
+    )
+
+    val items = if (rolNombre?.lowercase()?.trim() == "empresa") empresaItems else clienteItems
 
     val navBackStackEntry = navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry.value?.destination?.route
 
     NavigationBar {
-
         items.forEach { item ->
-
             val selected = currentRoute == item.route
-
             val color by animateColorAsState(
-                if (selected) MaterialTheme.colorScheme.primary
-                else Color.Gray,
+                if (selected) MaterialTheme.colorScheme.primary else Color.Gray,
                 label = ""
             )
-
             NavigationBarItem(
                 selected = selected,
                 onClick = {
                     navController.navigate(item.route) {
-
                         popUpTo(navController.graph.startDestinationId) {
                             saveState = true
                         }
-
                         restoreState = true
                         launchSingleTop = true
                     }
                 },
                 icon = {
-                    BadgedBox(
-                        badge = {
-                            if (item.route == Routes.MIS_CITAS) {
-                                Badge {
-                                    Text("1")
-                                }
-                            }
-                        }
-                    ) {
-                        Icon(
-                            imageVector = item.icon,
-                            contentDescription = item.label,
-                            tint = color
-                        )
-                    }
+                    Icon(
+                        imageVector = item.icon,
+                        contentDescription = item.label,
+                        tint = color
+                    )
                 },
                 label = {
-                    Text(
-                        text = item.label,
-                        color = color
-                    )
+                    Text(text = item.label, color = color)
                 }
             )
         }

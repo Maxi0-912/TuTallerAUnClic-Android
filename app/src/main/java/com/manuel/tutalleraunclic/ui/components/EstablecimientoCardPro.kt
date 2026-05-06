@@ -16,6 +16,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
 import coil.compose.AsyncImage
 import com.manuel.tutalleraunclic.data.model.EstablecimientoUI
+import com.manuel.tutalleraunclic.utils.fixImageUrl
+import com.manuel.tutalleraunclic.data.model.TipoEstablecimiento
 
 @Composable
 fun EstablecimientoCardPro(
@@ -38,7 +40,7 @@ fun EstablecimientoCardPro(
             Box {
 
                 AsyncImage(
-                    model = establecimiento.imagenUrl,
+                    model = fixImageUrl(establecimiento.imagenUrl),
                     contentDescription = establecimiento.nombre,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
@@ -72,6 +74,29 @@ fun EstablecimientoCardPro(
 
             Column(modifier = Modifier.padding(12.dp)) {
 
+                // TIPO BADGE
+                val (tipoLabel, tipoColor) = when {
+                    establecimiento.tipo is TipoEstablecimiento.Taller -> "🔧 Taller" to Color(0xFF2563EB)
+                    establecimiento.tipo is TipoEstablecimiento.Lavadero -> "🚿 Lavadero" to Color(0xFF16A34A)
+                    establecimiento.tipoNombre?.lowercase()?.contains("taller") == true -> "🔧 Taller" to Color(0xFF2563EB)
+                    establecimiento.tipoNombre?.lowercase()?.let { it.contains("lavadero") || it.contains("lava") } == true -> "🚿 Lavadero" to Color(0xFF16A34A)
+                    else -> null to null
+                }
+                if (tipoLabel != null && tipoColor != null) {
+                    Surface(
+                        color = tipoColor.copy(alpha = 0.12f),
+                        shape = RoundedCornerShape(20.dp)
+                    ) {
+                        Text(
+                            text = tipoLabel,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = tipoColor,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(6.dp))
+                }
+
                 Text(
                     text = establecimiento.direccion,
                     style = MaterialTheme.typography.bodySmall
@@ -99,11 +124,23 @@ fun EstablecimientoCardPro(
 
                 Spacer(modifier = Modifier.height(6.dp))
 
-                Text(
-                    text = "Desde ${establecimiento.precioDesde}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.primary
-                )
+                Row(
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = "Desde ${establecimiento.precioDesde}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    establecimiento.distanciaKm?.let { km ->
+                        Text(
+                            text = if (km < 1.0) "${"%.0f".format(km * 1000)} m" else "${"%.1f".format(km)} km",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        )
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(10.dp))
 

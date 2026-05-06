@@ -1,32 +1,63 @@
 package com.manuel.tutalleraunclic.data.local
 
 import android.content.Context
-import androidx.datastore.preferences.core.*
-import androidx.datastore.preferences.preferencesDataStore
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
+import dagger.hilt.android.qualifiers.ApplicationContext
+import javax.inject.Inject
+import javax.inject.Singleton
 
-private val Context.dataStore by preferencesDataStore(name = "auth_prefs")
+@Singleton
+class TokenManager @Inject constructor(
+    @ApplicationContext context: Context
+) {
 
-class TokenManager(private val context: Context) {
+    private val prefs = context.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
 
     companion object {
-        val TOKEN_KEY = stringPreferencesKey("auth_token")
+        private const val KEY_ACCESS      = "access_token"
+        private const val KEY_REFRESH     = "refresh_token"
+        private const val KEY_ROL         = "rol_nombre"
+        private const val KEY_PENDING_MSG = "pending_message"
     }
 
-    suspend fun saveToken(token: String) {
-        context.dataStore.edit {
-            it[TOKEN_KEY] = token
-        }
+    // ── Tokens ──────────────────────────────────────────────────────────────
+
+    fun saveTokens(access: String, refresh: String) {
+        prefs.edit()
+            .putString(KEY_ACCESS, access)
+            .putString(KEY_REFRESH, refresh)
+            .apply()
     }
 
-    fun getToken(): String? = runBlocking {
-        context.dataStore.data.first()[TOKEN_KEY]
+    fun getAccessToken(): String?  = prefs.getString(KEY_ACCESS, null)
+    fun getRefreshToken(): String? = prefs.getString(KEY_REFRESH, null)
+
+    fun hasValidSession(): Boolean =
+        !getAccessToken().isNullOrEmpty() && !getRefreshToken().isNullOrEmpty()
+
+    // ── Rol del usuario ──────────────────────────────────────────────────────
+
+    fun saveRolNombre(rolNombre: String) {
+        prefs.edit().putString(KEY_ROL, rolNombre.lowercase().trim()).apply()
     }
 
-    suspend fun clear() {
-        context.dataStore.edit {
-            it.clear()
-        }
+    /** Returns the saved role ("cliente", "empresa"), or null if not stored. */
+    fun getRolNombre(): String? = prefs.getString(KEY_ROL, null)
+
+    // ── Mensaje pendiente (e.g. "modo empresa no disponible") ─────────────────
+
+    fun savePendingMessage(message: String) {
+        prefs.edit().putString(KEY_PENDING_MSG, message).apply()
+    }
+
+    fun getPendingMessage(): String? = prefs.getString(KEY_PENDING_MSG, null)
+
+    fun clearPendingMessage() {
+        prefs.edit().remove(KEY_PENDING_MSG).apply()
+    }
+
+    // ── Limpieza total (logout) ───────────────────────────────────────────────
+
+    fun clearAll() {
+        prefs.edit().clear().apply()
     }
 }
