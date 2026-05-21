@@ -15,11 +15,13 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.*
 import androidx.navigation.navArgument
 
+import com.manuel.tutalleraunclic.ui.screens.login.ForgotPasswordScreen
 import com.manuel.tutalleraunclic.ui.screens.login.LoginScreen
+import com.manuel.tutalleraunclic.ui.screens.login.SeleccionarRolScreen
 import com.manuel.tutalleraunclic.ui.screens.register.RegisterScreen
 import com.manuel.tutalleraunclic.ui.screens.establecimientos.*
 import com.manuel.tutalleraunclic.ui.screens.citas.*
-import com.manuel.tutalleraunclic.ui.screens.perfil.PerfilScreen
+import com.manuel.tutalleraunclic.ui.screens.perfil.PerfilEmpresaScreen
 import com.manuel.tutalleraunclic.ui.screens.perfil.EditarPerfilScreen
 import com.manuel.tutalleraunclic.ui.screens.mapa.MapScreen
 import com.manuel.tutalleraunclic.ui.screens.notificaciones.NotificacionesScreen
@@ -54,6 +56,8 @@ fun AppRoot(
             currentRoute == null -> false
             currentRoute.startsWith(Routes.LOGIN) -> false
             currentRoute.startsWith(Routes.REGISTER) -> false
+            currentRoute.startsWith(Routes.FORGOT_PASSWORD) -> false
+            currentRoute.startsWith(Routes.SELECCIONAR_ROL) -> false
             currentRoute.startsWith(Routes.CITA) -> false
             currentRoute.startsWith(Routes.DETALLE)  -> false
             currentRoute.startsWith(Routes.TALLER)   -> false
@@ -86,6 +90,30 @@ fun AppRoot(
                     rolViewModel = rolViewModel,
                     onNavigateToRegister = {
                         navController.navigate(Routes.REGISTER)
+                    },
+                    onForgotPasswordClick = {
+                        navController.navigate(Routes.FORGOT_PASSWORD)
+                    }
+                )
+            }
+
+            composable(Routes.FORGOT_PASSWORD) {
+                ForgotPasswordScreen(onBack = { navController.popBackStack() })
+            }
+
+            composable(Routes.SELECCIONAR_ROL) {
+                SeleccionarRolScreen(
+                    onRolSeleccionado = { rol ->
+                        when (rol.lowercase()) {
+                            "empresa" -> navController.navigate(Routes.EMPRESA_HOME) {
+                                popUpTo(Routes.SELECCIONAR_ROL) { inclusive = true }
+                                launchSingleTop = true
+                            }
+                            else -> navController.navigate(Routes.ESTABLECIMIENTOS) {
+                                popUpTo(Routes.SELECCIONAR_ROL) { inclusive = true }
+                                launchSingleTop = true
+                            }
+                        }
                     }
                 )
             }
@@ -112,7 +140,7 @@ fun AppRoot(
 
             // 🏢 ESTABLECIMIENTOS
             composable(Routes.ESTABLECIMIENTOS) {
-                ListaEstablecimientosScreen(navController)
+                EstablecimientosScreen(navController = navController)
             }
 
             composable(
@@ -204,6 +232,18 @@ fun AppRoot(
                 }
             }
 
+            composable(Routes.EMPRESA_CITAS) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("Citas de empresa - Próximamente", style = MaterialTheme.typography.titleMedium)
+                }
+            }
+
+            composable(Routes.EMPRESA_ESTABLECIMIENTO) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("Mi establecimiento - Próximamente", style = MaterialTheme.typography.titleMedium)
+                }
+            }
+
             // 🗺️ MAPA
             composable(Routes.MAPA) {
                 MapScreen(navController = navController)
@@ -219,15 +259,12 @@ fun AppRoot(
 
             // 👤 PERFIL
             composable(Routes.PERFIL) {
-                PerfilScreen(
+                PerfilEmpresaScreen(
                     onNavigateToLogin = {
                         navController.navigate(Routes.LOGIN) {
                             popUpTo(0) { inclusive = true }
                             launchSingleTop = true
                         }
-                    },
-                    onNavigateToEditarPerfil = {
-                        navController.navigate(Routes.EDITAR_PERFIL)
                     }
                 )
             }

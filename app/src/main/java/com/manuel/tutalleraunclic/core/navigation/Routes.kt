@@ -2,8 +2,10 @@ package com.manuel.tutalleraunclic.core.navigation
 
 object Routes {
 
-    const val LOGIN = "login"
-    const val REGISTER = "register"
+    const val LOGIN            = "login"
+    const val REGISTER         = "register"
+    const val FORGOT_PASSWORD  = "forgot_password"
+    const val SELECCIONAR_ROL  = "seleccionar_rol"
 
     const val ESTABLECIMIENTOS = "establecimientos"
     const val DETALLE     = "detalle"

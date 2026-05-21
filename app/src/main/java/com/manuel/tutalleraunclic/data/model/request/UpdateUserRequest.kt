@@ -8,5 +8,7 @@ data class UpdateUserRequest(
     @SerializedName("last_name") val last_name: String? = null,
     val email: String? = null,
     val telefono: String? = null,
-    val is_active: Boolean? = null
+    val is_active: Boolean? = null,
+    val password: String? = null,
+    val rol: Int? = null
 )

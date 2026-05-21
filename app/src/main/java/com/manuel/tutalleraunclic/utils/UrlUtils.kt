@@ -11,4 +11,6 @@ fun fixImageUrl(url: String?): String? {
     return url
         .replace("http://127.0.0.1:8000", NGROK_BASE)
         .replace("http://localhost:8000", NGROK_BASE)
+        .replace("http://10.0.2.2:8000", NGROK_BASE)
+        .replace("http://", "https://")
 }

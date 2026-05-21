@@ -42,7 +42,7 @@ class MainActivity : ComponentActivity() {
                 val isLoggedIn = remember { tokenManager.hasValidSession() }
                 val startRoute = when {
                     !isLoggedIn -> Routes.LOGIN
-                    tokenManager.getRolNombre() == "empresa" -> Routes.EMPRESA_HOME
+                    tokenManager.getRolNombre()?.lowercase()?.trim() == "empresa" -> Routes.EMPRESA_HOME
                     else -> Routes.ESTABLECIMIENTOS
                 }
 

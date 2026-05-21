@@ -18,6 +18,11 @@ interface ApiService {
         @Body request: LoginRequest
     ): Response<LoginResponse>
 
+    @POST("usuarios/auth/google/")
+    suspend fun loginWithGoogle(
+        @Body request: GoogleAuthRequest
+    ): Response<LoginResponse>
+
     @POST("usuarios/register/")
     suspend fun register(
         @Body request: RegisterRequest

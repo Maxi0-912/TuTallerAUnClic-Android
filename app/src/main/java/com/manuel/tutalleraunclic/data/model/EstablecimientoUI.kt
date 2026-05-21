@@ -12,6 +12,5 @@ data class EstablecimientoUI(
     val longitud: Double = 0.0,
     val distanciaKm: Double? = null,
     val tipoNombre: String? = null,
-) {
-    val tipo: TipoEstablecimiento get() = TipoEstablecimiento.from(tipoNombre)
-}
+    val tipo: TipoEstablecimiento = TipoEstablecimiento.Otro(""),
+)

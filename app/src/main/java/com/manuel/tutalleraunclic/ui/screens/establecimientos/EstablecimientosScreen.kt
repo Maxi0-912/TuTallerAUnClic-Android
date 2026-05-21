@@ -20,6 +20,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -28,6 +30,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
@@ -45,19 +48,36 @@ import kotlinx.coroutines.delay
 private data class BannerItem(
     val titulo: String,
     val descripcion: String,
-    val colores: List<Color>
+    val colores: List<Color>,
+    val icono: String,
+    val etiqueta: String,
+    val imageUrl: String
 )
 
 private val BANNERS = listOf(
     BannerItem(
         titulo = "Tu vehículo merece lo mejor",
         descripcion = "Encuentra talleres y lavaderos cerca de ti, rápido y fácil",
-        colores = listOf(Color(0xFF2563EB), Color(0xFF7C3AED))
+        colores = listOf(Color(0xFF1E293B), Color(0xFF334155)),
+        icono = "🔧",
+        etiqueta = "DESTACADO",
+        imageUrl = "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=800"
     ),
     BannerItem(
         titulo = "Agenda en segundos",
         descripcion = "Sin esperas, sin llamadas. Solo toca y reserva tu cita",
-        colores = listOf(Color(0xFF059669), Color(0xFF0891B2))
+        colores = listOf(Color(0xFF0F172A), Color(0xFF1E3A5F)),
+        icono = "💧",
+        etiqueta = "OFERTA",
+        imageUrl = "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800"
+    ),
+    BannerItem(
+        titulo = "¡Agenda ahora!",
+        descripcion = "Disponibilidad limitada, reserva tu cita hoy mismo",
+        colores = listOf(Color(0xFF1A1A2E), Color(0xFF16213E)),
+        icono = "🔧",
+        etiqueta = "OFERTA",
+        imageUrl = "https://images.unsplash.com/photo-1607860108855-64acf2078ed9?w=800"
     )
 )
 
@@ -144,16 +164,22 @@ fun EstablecimientosScreen(navController: NavController) {
                     Spacer(Modifier.height(8.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Center
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         repeat(BANNERS.size) { idx ->
+                            val selected = idx == pagerState.currentPage
+                            val dotSize by animateDpAsState(
+                                targetValue = if (selected) 12.dp else 7.dp,
+                                label = "dot_size"
+                            )
                             Box(
                                 modifier = Modifier
                                     .padding(horizontal = 3.dp)
-                                    .size(if (idx == pagerState.currentPage) 10.dp else 6.dp)
+                                    .size(dotSize)
                                     .clip(RoundedCornerShape(50))
                                     .background(
-                                        if (idx == pagerState.currentPage)
+                                        if (selected)
                                             MaterialTheme.colorScheme.primary
                                         else
                                             MaterialTheme.colorScheme.onSurface.copy(alpha = 0.25f)
@@ -186,6 +212,8 @@ fun EstablecimientosScreen(navController: NavController) {
                 }
                 Spacer(Modifier.height(8.dp))
             }
+
+            item { Spacer(Modifier.height(8.dp)) }
 
             // ── TALLERES ─────────────────────────────────────────────────────
             item {
@@ -238,41 +266,99 @@ private fun BannerCard(banner: BannerItem) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(155.dp)
+            .height(200.dp)
             .clip(RoundedCornerShape(20.dp))
-            .background(Brush.horizontalGradient(banner.colores))
-            .padding(20.dp),
-        contentAlignment = Alignment.CenterStart
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        AsyncImage(
+            model = banner.imageUrl,
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize()
+        )
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        listOf(
+                            Color(0xFF000000).copy(alpha = 0.35f),
+                            Color(0xFF000000).copy(alpha = 0.75f)
+                        )
+                    )
+                )
+        )
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(20.dp),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            Box(
+                modifier = Modifier
+                    .background(Color.White.copy(alpha = 0.2f), RoundedCornerShape(20.dp))
+                    .padding(horizontal = 10.dp, vertical = 4.dp)
+            ) {
+                Text(
+                    text = banner.etiqueta,
+                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                    color = Color.White
+                )
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(
+                    text = banner.titulo,
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.ExtraBold),
+                    color = Color.White
+                )
+                Text(
+                    text = banner.descripcion,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.White.copy(alpha = 0.88f)
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .background(Color.White.copy(alpha = 0.2f), RoundedCornerShape(20.dp))
+                    .padding(horizontal = 14.dp, vertical = 6.dp)
+            ) {
+                Text(
+                    text = "Ver más →",
+                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                    color = Color.White
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SeccionTitulo(titulo: String, onVerTodos: () -> Unit = {}) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 16.dp, end = 4.dp, top = 8.dp, bottom = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = titulo,
+            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+            modifier = Modifier.weight(1f)
+        )
+        TextButton(onClick = onVerTodos) {
             Text(
-                text = banner.titulo,
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = Color.White
-            )
-            Text(
-                text = banner.descripcion,
-                style = MaterialTheme.typography.bodySmall,
-                color = Color.White.copy(alpha = 0.88f)
+                text = "Ver todos →",
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.primary
             )
         }
     }
 }
 
 @Composable
-private fun SeccionTitulo(titulo: String) {
-    Text(
-        text = titulo,
-        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 4.dp)
-    )
-}
-
-@Composable
 private fun MiniCard(establecimiento: EstablecimientoUI, onClick: () -> Unit) {
     Card(
         modifier = Modifier
-            .width(175.dp)
+            .width(200.dp)
             .clickable { onClick() },
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
@@ -284,12 +370,13 @@ private fun MiniCard(establecimiento: EstablecimientoUI, onClick: () -> Unit) {
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(105.dp)
+                    .height(120.dp)
             )
             Column(modifier = Modifier.padding(10.dp)) {
                 Text(
                     text = establecimiento.nombre,
-                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -314,6 +401,15 @@ private fun MiniCard(establecimiento: EstablecimientoUI, onClick: () -> Unit) {
                         text = if (km < 1.0) "${"%.0f".format(km * 1000)} m" else "${"%.1f".format(km)} km",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f)
+                    )
+                }
+                if (establecimiento.direccion.isNotBlank()) {
+                    Text(
+                        text = establecimiento.direccion,
+                        fontSize = 11.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                     )
                 }
             }

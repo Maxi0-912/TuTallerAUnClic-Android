@@ -19,9 +19,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.ColorPainter
 import coil.compose.AsyncImage
-import com.manuel.tutalleraunclic.utils.fixImageUrl
-
 import com.manuel.tutalleraunclic.data.model.entity.avatarUrl
 import com.manuel.tutalleraunclic.data.model.request.UpdateUserRequest
 import com.manuel.tutalleraunclic.viewmodel.PerfilViewModel
@@ -110,13 +110,16 @@ fun EditarPerfilScreen(
             // ── Avatar ──────────────────────────────────────────────────────
             // Prioridad: imagen recién seleccionada > foto actual del perfil > placeholder
             val avatarModel: Any = state.fotoUri
-                ?: fixImageUrl(state.usuario?.avatarUrl)
+                ?: state.usuario?.avatarUrl
                 ?: "https://i.pravatar.cc/300?u=0"
+            val avatarPlaceholder = ColorPainter(Color(0xFFE0E0E0))
 
             Box(contentAlignment = Alignment.BottomEnd) {
                 AsyncImage(
                     model = avatarModel,
                     contentDescription = "Foto de perfil",
+                    placeholder = avatarPlaceholder,
+                    error = avatarPlaceholder,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
                         .size(110.dp)

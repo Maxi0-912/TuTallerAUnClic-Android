@@ -1,26 +1,38 @@
 package com.manuel.tutalleraunclic.ui.screens.citas
 
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material3.*
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.*
-import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.manuel.tutalleraunclic.ui.components.AppAlertDialog
 import com.manuel.tutalleraunclic.viewmodel.CitaViewModel
 import com.manuel.tutalleraunclic.viewmodel.UiEvent
 import kotlinx.coroutines.flow.collectLatest
 import java.util.Calendar
+import java.util.TimeZone
+
+private val GradientCita = listOf(Color(0xFF4F8EF7), Color(0xFF7C5CBF))
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -31,29 +43,22 @@ fun CrearCitaScreen(
     onBack: () -> Unit = {},
     viewModel: CitaViewModel = hiltViewModel()
 ) {
-
     val snackbarHostState = remember { SnackbarHostState() }
-    val interactionSource = remember { MutableInteractionSource() }
 
-    // INIT
     LaunchedEffect(Unit) {
         viewModel.setIds(establecimientoId, servicioId)
     }
 
-    // EVENTOS
     LaunchedEffect(Unit) {
         viewModel.uiEvent.collectLatest { event ->
             when (event) {
-                is UiEvent.ShowError -> snackbarHostState.showSnackbar(event.message)
-                is UiEvent.ShowMessage -> {
-                    snackbarHostState.showSnackbar(event.message)
-                    onSuccess()
-                }
+                is UiEvent.ShowError   -> snackbarHostState.showSnackbar(event.message)
+                is UiEvent.ShowMessage -> { snackbarHostState.showSnackbar(event.message); onSuccess() }
             }
         }
     }
 
-    // ---------------- DATE PICKER ----------------
+    // ── Date Picker ──────────────────────────────────────────────────────────
     val datePickerState = rememberDatePickerState()
     var showDatePicker by remember { mutableStateOf(false) }
 
@@ -63,199 +68,248 @@ fun CrearCitaScreen(
             confirmButton = {
                 TextButton(onClick = {
                     showDatePicker = false
-
                     datePickerState.selectedDateMillis?.let { millis ->
-
-                        val calendar = Calendar.getInstance().apply {
+                        val calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
                             timeInMillis = millis
                         }
-
-                        val year = calendar.get(Calendar.YEAR)
-                        val month = calendar.get(Calendar.MONTH) + 1
-                        val day = calendar.get(Calendar.DAY_OF_MONTH)
-
-                        val fecha = "%04d-%02d-%02d".format(year, month, day)
-
+                        val fecha = "%04d-%02d-%02d".format(
+                            calendar.get(Calendar.YEAR),
+                            calendar.get(Calendar.MONTH) + 1,
+                            calendar.get(Calendar.DAY_OF_MONTH)
+                        )
                         viewModel.seleccionarFecha(fecha)
                     }
-                }) {
-                    Text("Aceptar")
-                }
+                }) { Text("Aceptar") }
             }
-        ) {
-            DatePicker(state = datePickerState)
-        }
+        ) { DatePicker(state = datePickerState) }
     }
 
-    // ---------------- TIME PICKER ----------------
+    // ── Time Picker ──────────────────────────────────────────────────────────
     val timePickerState = rememberTimePickerState()
     var showTimePicker by remember { mutableStateOf(false) }
 
     if (showTimePicker) {
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { showTimePicker = false },
             confirmButton = {
                 TextButton(onClick = {
                     showTimePicker = false
-
-                    val hora = "%02d:%02d:00".format(
-                        timePickerState.hour,
-                        timePickerState.minute
-                    )
-
+                    val hora = "%02d:%02d:00".format(timePickerState.hour, timePickerState.minute)
                     viewModel.onHoraChange(hora)
-                }) {
-                    Text("Aceptar")
-                }
+                }) { Text("Aceptar") }
             },
-            text = {
-                TimePicker(state = timePickerState)
-            }
+            text = { TimePicker(state = timePickerState) }
         )
     }
 
-    // ---------------- UI ----------------
-    Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        topBar = {
-            TopAppBar(
-                title = { Text("Agendar Cita") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
-                    }
-                }
-            )
-        }
-    ) { padding ->
-
+    // ── Scaffold ─────────────────────────────────────────────────────────────
+    Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) { padding ->
         Column(
             modifier = Modifier
-                .padding(padding)
                 .fillMaxSize()
-                .padding(16.dp)
+                .padding(padding)
+                .verticalScroll(rememberScrollState())
         ) {
 
-            Text(
-                text = "Programa tu servicio",
-                style = MaterialTheme.typography.titleLarge
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // CARD PRINCIPAL
-            Card(
-                shape = RoundedCornerShape(24.dp),
-                elevation = CardDefaults.cardElevation(10.dp),
-                modifier = Modifier.fillMaxWidth()
+            // ── Gradient header ──────────────────────────────────────────────
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Brush.linearGradient(GradientCita))
+                    .padding(horizontal = 20.dp, vertical = 28.dp)
             ) {
-
-                Column(modifier = Modifier.padding(20.dp)) {
-
-                    Text(
-                        "Detalles del servicio",
-                        style = MaterialTheme.typography.titleMedium
-                    )
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    // PLACA
-                    OutlinedTextField(
-                        value = viewModel.placa,
-                        onValueChange = viewModel::onPlacaChange,
-                        label = { Text("Placa del vehículo") },
-                        leadingIcon = { Icon(Icons.Default.DirectionsCar, null) },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(14.dp),
-                        singleLine = true
-                    )
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    // DESCRIPCIÓN
-                    OutlinedTextField(
-                        value = viewModel.descripcion,
-                        onValueChange = viewModel::onDescripcionChange,
-                        label = { Text("¿Qué necesita tu vehículo? (opcional)") },
-                        leadingIcon = { Icon(Icons.Default.Build, null) },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(14.dp),
-                        maxLines = 3
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // FECHA (tipo botón moderno)
-                    ElevatedCard(
-                        onClick = { showDatePicker = true },
-                        shape = RoundedCornerShape(14.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(16.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(
-                                viewModel.fecha.ifEmpty { "Seleccionar fecha" }
-                            )
-                        }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = "Volver",
+                            tint = Color.White
+                        )
                     }
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    // HORA (tipo botón moderno)
-                    ElevatedCard(
-                        onClick = { showTimePicker = true },
-                        shape = RoundedCornerShape(14.dp),
-                        modifier = Modifier.fillMaxWidth()
+                    Spacer(Modifier.width(4.dp))
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clip(CircleShape)
+                            .background(Color.White.copy(alpha = 0.2f)),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Row(
-                            modifier = Modifier.padding(16.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Row {
-                                Icon(Icons.Default.AccessTime, null)
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    viewModel.hora.ifEmpty { "Seleccionar hora" }
-                                )
-                            }
-                        }
+                        Icon(
+                            imageVector = Icons.Default.CalendarMonth,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(24.dp)
+                        )
                     }
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    // ANIMACIÓN
-                    AnimatedVisibility(visible = viewModel.fecha.isNotEmpty()) {
+                    Spacer(Modifier.width(12.dp))
+                    Column {
                         Text(
-                            "Fecha seleccionada ✔",
-                            color = MaterialTheme.colorScheme.primary
+                            text = "Agendar Cita",
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                        Text(
+                            text = "Programa tu servicio",
+                            fontSize = 13.sp,
+                            color = Color.White.copy(alpha = 0.8f)
                         )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 20.dp)) {
 
-            // BOTÓN
-            Button(
-                onClick = { viewModel.crearCita() },
-                enabled = !viewModel.isSaving,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(60.dp),
-                shape = RoundedCornerShape(18.dp)
-            ) {
-
-                if (viewModel.isSaving) {
-                    CircularProgressIndicator(
-                        color = Color.White,
-                        strokeWidth = 2.dp,
-                        modifier = Modifier.size(22.dp)
-                    )
-                } else {
-                    Text("Confirmar Cita")
+                // ── Card: Tu vehículo ────────────────────────────────────────
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = MaterialTheme.shapes.large,
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text(
+                            text = "Tu vehículo",
+                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold)
+                        )
+                        OutlinedTextField(
+                            value = viewModel.placa,
+                            onValueChange = viewModel::onPlacaChange,
+                            label = { Text("Placa del vehículo") },
+                            leadingIcon = { Icon(Icons.Default.DirectionsCar, null) },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(14.dp),
+                            singleLine = true
+                        )
+                        OutlinedTextField(
+                            value = viewModel.descripcion,
+                            onValueChange = viewModel::onDescripcionChange,
+                            label = { Text("¿Qué necesita tu vehículo? (opcional)") },
+                            leadingIcon = { Icon(Icons.Default.Build, null) },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(14.dp),
+                            maxLines = 3
+                        )
+                    }
                 }
+
+                Spacer(Modifier.height(16.dp))
+
+                // ── Card: Fecha y hora ───────────────────────────────────────
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = MaterialTheme.shapes.large,
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text(
+                            text = "Fecha y hora",
+                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold)
+                        )
+
+                        // Fecha selector
+                        OutlinedCard(
+                            onClick = { showDatePicker = true },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(14.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.CalendarToday,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Text(
+                                    text = viewModel.fecha.ifEmpty { "Seleccionar fecha" },
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = if (viewModel.fecha.isEmpty())
+                                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                                    else MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        }
+
+                        // Hora selector
+                        OutlinedCard(
+                            onClick = { showTimePicker = true },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(14.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.AccessTime,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Text(
+                                    text = viewModel.hora.ifEmpty { "Seleccionar hora" },
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = if (viewModel.hora.isEmpty())
+                                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                                    else MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(28.dp))
+
+                // ── Botón confirmar ──────────────────────────────────────────
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(
+                            if (!viewModel.isSaving)
+                                Brush.linearGradient(GradientCita)
+                            else Brush.linearGradient(
+                                listOf(
+                                    Color(0xFF4F8EF7).copy(alpha = 0.55f),
+                                    Color(0xFF7C5CBF).copy(alpha = 0.55f)
+                                )
+                            )
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (viewModel.isSaving) {
+                        CircularProgressIndicator(
+                            color = Color.White,
+                            strokeWidth = 2.5.dp,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    } else {
+                        TextButton(
+                            onClick = { viewModel.crearCita() },
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            Text(
+                                text = "Confirmar Cita",
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(24.dp))
             }
         }
     }

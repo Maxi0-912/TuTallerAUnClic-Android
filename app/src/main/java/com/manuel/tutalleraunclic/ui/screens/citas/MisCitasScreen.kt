@@ -13,11 +13,13 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import com.manuel.tutalleraunclic.ui.components.AppAlertDialog
 import com.manuel.tutalleraunclic.ui.components.CitaItem
 import com.manuel.tutalleraunclic.viewmodel.MisCitasViewModel
 import com.manuel.tutalleraunclic.viewmodel.CitasState
 import kotlinx.coroutines.launch
 import androidx.navigation.NavController
+import androidx.navigation.compose.currentBackStackEntryAsState
 import com.manuel.tutalleraunclic.core.navigation.Routes
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -31,6 +33,11 @@ fun MisCitasScreen(
     val scope = rememberCoroutineScope()
     var citaAEliminar by remember { mutableStateOf<Int?>(null) }
     val lifecycleOwner = LocalLifecycleOwner.current
+
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    LaunchedEffect(navBackStackEntry) {
+        viewModel.obtenerCitas()
+    }
 
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
@@ -56,7 +63,7 @@ fun MisCitasScreen(
         ) {
 
             if (citaAEliminar != null) {
-                AlertDialog(
+                AppAlertDialog(
                     onDismissRequest = { citaAEliminar = null },
                     confirmButton = {
                         Button(onClick = {

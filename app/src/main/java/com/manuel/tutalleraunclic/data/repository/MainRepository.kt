@@ -32,24 +32,81 @@ class MainRepository @Inject constructor(
             if (response.isSuccessful) {
                 val body = response.body()!!
 
+                // Tokens primero — AuthInterceptor los necesita para llamar a /perfil/
                 tokenManager.saveTokens(body.access, body.refresh)
 
-                // Persist role for role-based routing (including app restarts)
-                val rol = body.rolNombre
-                tokenManager.saveRolNombre(rol)
+                // El backend solo devuelve access y refresh, sin rol.
+                // Llamamos a /perfil/ para obtener el rol real del usuario.
+                val rolFinal: String = try {
+                    val perfilResponse = api.getPerfil()
+                    if (perfilResponse.isSuccessful) {
+                        perfilResponse.body()?.rol_nombre?.lowercase()?.trim() ?: "cliente"
+                    } else {
+                        android.util.Log.w("LOGIN_ROL", "GET /perfil/ HTTP ${perfilResponse.code()}")
+                        "cliente"
+                    }
+                } catch (e: Exception) {
+                    android.util.Log.e("LOGIN_ROL", "GET /perfil/ excepción: ${e.message}")
+                    "cliente"
+                }
 
-                // Store a one-shot message for empresa users (shown on home arrival)
-                if (rol == "empresa") {
+                tokenManager.saveRolNombre(rolFinal)
+                android.util.Log.d("LOGIN_ROL", "Rol guardado: '$rolFinal'")
+
+                if (rolFinal == "empresa") {
                     tokenManager.savePendingMessage("Modo empresa aún no disponible en la app")
                 }
 
-                Result.success(body)
+                // Devolvemos un copy con rolNombreDirecto relleno para que
+                // LoginViewModel lea loginResponse.rolNombre correctamente.
+                Result.success(body.copy(rolNombreDirecto = rolFinal))
             } else {
                 val errorBody = response.errorBody()?.string()
                 val mensaje = parseDjangoError(errorBody) ?: "Credenciales incorrectas"
                 Result.failure(Exception(mensaje))
             }
 
+        } catch (e: Exception) {
+            Result.failure(Exception("Error de conexión"))
+        }
+    }
+
+    suspend fun loginWithGoogle(idToken: String): Result<LoginResponse> {
+        return try {
+            val response = api.loginWithGoogle(GoogleAuthRequest(idToken))
+            if (response.isSuccessful) {
+                val body = response.body()!!
+                tokenManager.saveTokens(body.access, body.refresh)
+                // Empty string signals "new user without role" — ViewModel will redirect
+                // to role-selection screen instead of using the "cliente" fallback.
+                val rolFinal: String = try {
+                    val perfilResponse = api.getPerfil()
+                    if (perfilResponse.isSuccessful)
+                        perfilResponse.body()?.rol_nombre?.lowercase()?.trim().orEmpty()
+                    else ""
+                } catch (e: Exception) { "" }
+                tokenManager.saveRolNombre(rolFinal)
+                Result.success(body.copy(rolNombreDirecto = rolFinal))
+            } else {
+                val errorBody = response.errorBody()?.string()
+                Result.failure(Exception(parseDjangoError(errorBody) ?: "Error al iniciar con Google"))
+            }
+        } catch (e: Exception) {
+            Result.failure(Exception("Error de conexión"))
+        }
+    }
+
+    suspend fun asignarRol(rolId: Int): Result<String> {
+        return try {
+            val response = api.actualizarPerfil(UpdateUserRequest(rol = rolId))
+            if (response.isSuccessful) {
+                val rolNombre = response.body()?.rol_nombre?.lowercase()?.trim()
+                    ?: if (rolId == 3) "empresa" else "cliente"
+                tokenManager.saveRolNombre(rolNombre)
+                Result.success(rolNombre)
+            } else {
+                Result.failure(Exception("Error ${response.code()}"))
+            }
         } catch (e: Exception) {
             Result.failure(Exception("Error de conexión"))
         }

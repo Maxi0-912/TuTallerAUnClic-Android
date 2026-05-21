@@ -12,12 +12,22 @@ val TextPrimary  = Color(0xFF0F172A)
 val TextSecondary= Color(0xFF64748B)
 
 // ── DARK (modern slate/navy) ─────────────────────────────
-val DarkBackground     = Color(0xFF0B1120)   // casi negro azulado
-val DarkSurface        = Color(0xFF131D2E)   // carta oscura
-val DarkSurfaceVariant = Color(0xFF1E2D42)   // carta elevada
-val DarkPrimary        = Color(0xFF60A5FA)   // azul brillante
-val DarkSecondary      = Color(0xFF818CF8)   // indigo
-val DarkTertiary       = Color(0xFFFB923C)   // naranja acción
+val DarkBackground     = Color(0xFF0B1120)
+val DarkSurface        = Color(0xFF131D2E)
+val DarkSurfaceVariant = Color(0xFF1E2D42)
+val DarkPrimary        = Color(0xFF60A5FA)
+val DarkSecondary      = Color(0xFF818CF8)
+val DarkTertiary       = Color(0xFFFB923C)
 val DarkOnBackground   = Color(0xFFE2E8F0)
 val DarkOnSurface      = Color(0xFFCBD5E1)
 val DarkOutline        = Color(0xFF334155)
+
+// ── DESIGN SYSTEM (project palette) ─────────────────────────────────────────
+val AppBackgroundDark  = Color(0xFF0F0F1A)
+val AppSurfaceDark     = Color(0xFF1E1E35)
+val AppBorderDark      = Color(0xFF2D2D4A)
+val PrimaryBlue        = Color(0xFF4F8EF7)
+val PrimaryPurple      = Color(0xFF7C5CBF)
+val AppTextPrimary     = Color(0xFFE0E0F0)
+val AppTextSecondary   = Color(0xFF8888AA)
+val AppIconTint        = Color(0xFF5566AA)

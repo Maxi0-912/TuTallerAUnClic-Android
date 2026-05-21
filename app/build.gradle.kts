@@ -56,6 +56,9 @@ android {
 
 dependencies {
 
+
+    implementation("com.google.android.gms:play-services-auth:21.0.0")
+
     implementation("com.google.firebase:firebase-messaging:23.4.0")
 
     // 🔥 BOM (UNA SOLA VEZ)
@@ -94,7 +97,12 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
 
     // 🔥 IMÁGENES
-    implementation("io.coil-kt:coil-compose:2.5.0")
+    implementation("io.coil-kt:coil-compose:2.7.0")
+
+    // 🔥 GOOGLE CREDENTIAL MANAGER (Google Sign-In moderno, sin Firebase plugin)
+    implementation("androidx.credentials:credentials:1.3.0")
+    implementation("androidx.credentials:credentials-play-services-auth:1.3.0")
+    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
 
     // 🔥 SPLASH
     implementation("androidx.core:core-splashscreen:1.0.1")

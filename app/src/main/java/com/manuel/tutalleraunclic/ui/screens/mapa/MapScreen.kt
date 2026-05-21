@@ -82,17 +82,18 @@ fun MapScreen(
     val detalleSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val listaSheetState   = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    // Lista filtrada: se recalcula cuando cambia la lista o el filtro
-    val listaFiltrada = remember(viewModel.lista, filtroActivo) {
+    // Lista filtrada: usa .size como clave porque mutableStateListOf() es siempre
+    // el mismo objeto y remember(lista) nunca detectaría el cambio de contenido.
+    val listaFiltrada = remember(viewModel.lista.size, filtroActivo) {
         when (filtroActivo) {
             is TipoEstablecimiento.Taller   -> viewModel.lista.filter { it.tipo is TipoEstablecimiento.Taller }
             is TipoEstablecimiento.Lavadero -> viewModel.lista.filter { it.tipo is TipoEstablecimiento.Lavadero }
-            else                            -> viewModel.lista
+            else                            -> viewModel.lista.toList()
         }
     }
 
-    // Bitmaps de marcadores — recalcular solo cuando cambia la lista completa
-    val iconCache = remember(viewModel.lista) {
+    // Bitmaps de marcadores — misma razón: clave = tamaño de la lista.
+    val iconCache = remember(viewModel.lista.size) {
         viewModel.lista.associate { est ->
             val hue = when (est.tipo) {
                 is TipoEstablecimiento.Taller   -> BitmapDescriptorFactory.HUE_RED

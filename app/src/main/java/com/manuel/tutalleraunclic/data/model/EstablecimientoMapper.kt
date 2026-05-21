@@ -1,5 +1,6 @@
 package com.manuel.tutalleraunclic.data.model
 
+import android.util.Log
 import com.manuel.tutalleraunclic.data.model.entity.Establecimiento
 import com.manuel.tutalleraunclic.utils.fixImageUrl
 import kotlin.math.*
@@ -10,6 +11,9 @@ fun Establecimiento.toUI(userLat: Double? = null, userLng: Double? = null): Esta
     val distancia = if (userLat != null && userLng != null) {
         haversineKm(userLat, userLng, lat, lng)
     } else null
+
+    val tipoResuelto = TipoEstablecimiento.from(tipo_nombre)
+    Log.d("MapperDebug", "id=$id | tipo_nombre='$tipo_nombre' → tipo=$tipoResuelto")
 
     return EstablecimientoUI(
         id           = id,
@@ -23,6 +27,7 @@ fun Establecimiento.toUI(userLat: Double? = null, userLng: Double? = null): Esta
         longitud     = lng,
         distanciaKm  = distancia,
         tipoNombre   = tipo_nombre,
+        tipo         = tipoResuelto,
     )
 }
 
