@@ -18,6 +18,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.manuel.tutalleraunclic.data.model.entity.Notificacion
+import androidx.compose.foundation.Image
+import androidx.compose.ui.res.painterResource
+import com.manuel.tutalleraunclic.R
 import com.manuel.tutalleraunclic.viewmodel.NotificacionesViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -33,7 +36,19 @@ fun NotificacionesScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Notificaciones") },
+                title = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.logo_solo),
+                            contentDescription = "Logo",
+                            modifier = Modifier.size(32.dp).clip(CircleShape)
+                        )
+                        Text("Notificaciones", fontWeight = FontWeight.Bold)
+                    }
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Volver")

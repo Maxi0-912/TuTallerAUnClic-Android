@@ -1,16 +1,17 @@
 package com.manuel.tutalleraunclic.ui.screens.citas
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Build
-import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material3.*
@@ -21,11 +22,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.manuel.tutalleraunclic.ui.components.AppAlertDialog
+import com.manuel.tutalleraunclic.R
 import com.manuel.tutalleraunclic.viewmodel.CitaViewModel
 import com.manuel.tutalleraunclic.viewmodel.UiEvent
 import kotlinx.coroutines.flow.collectLatest
@@ -34,7 +36,12 @@ import java.util.TimeZone
 
 private val GradientCita = listOf(Color(0xFF4F8EF7), Color(0xFF7C5CBF))
 
-@OptIn(ExperimentalMaterial3Api::class)
+private val HorasDisponibles = listOf(
+    "08:00", "09:00", "10:00", "11:00", "12:00",
+    "13:00", "14:00", "15:00", "16:00", "17:00", "18:00"
+)
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun CrearCitaScreen(
     establecimientoId: Int,
@@ -69,37 +76,19 @@ fun CrearCitaScreen(
                 TextButton(onClick = {
                     showDatePicker = false
                     datePickerState.selectedDateMillis?.let { millis ->
-                        val calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
+                        val utcCalendar = Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
                             timeInMillis = millis
                         }
                         val fecha = "%04d-%02d-%02d".format(
-                            calendar.get(Calendar.YEAR),
-                            calendar.get(Calendar.MONTH) + 1,
-                            calendar.get(Calendar.DAY_OF_MONTH)
+                            utcCalendar.get(Calendar.YEAR),
+                            utcCalendar.get(Calendar.MONTH) + 1,
+                            utcCalendar.get(Calendar.DAY_OF_MONTH)
                         )
                         viewModel.seleccionarFecha(fecha)
                     }
                 }) { Text("Aceptar") }
             }
         ) { DatePicker(state = datePickerState) }
-    }
-
-    // ── Time Picker ──────────────────────────────────────────────────────────
-    val timePickerState = rememberTimePickerState()
-    var showTimePicker by remember { mutableStateOf(false) }
-
-    if (showTimePicker) {
-        AppAlertDialog(
-            onDismissRequest = { showTimePicker = false },
-            confirmButton = {
-                TextButton(onClick = {
-                    showTimePicker = false
-                    val hora = "%02d:%02d:00".format(timePickerState.hour, timePickerState.minute)
-                    viewModel.onHoraChange(hora)
-                }) { Text("Aceptar") }
-            },
-            text = { TimePicker(state = timePickerState) }
-        )
     }
 
     // ── Scaffold ─────────────────────────────────────────────────────────────
@@ -127,20 +116,13 @@ fun CrearCitaScreen(
                         )
                     }
                     Spacer(Modifier.width(4.dp))
-                    Box(
+                    Image(
+                        painter = painterResource(id = R.drawable.logo_solo),
+                        contentDescription = "Logo",
                         modifier = Modifier
                             .size(44.dp)
                             .clip(CircleShape)
-                            .background(Color.White.copy(alpha = 0.2f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.CalendarMonth,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
+                    )
                     Spacer(Modifier.width(12.dp))
                     Column {
                         Text(
@@ -239,29 +221,34 @@ fun CrearCitaScreen(
                             }
                         }
 
-                        // Hora selector
-                        OutlinedCard(
-                            onClick = { showTimePicker = true },
+                        // Hora — chips de horas disponibles
+                        Text(
+                            text = "Hora",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        )
+                        FlowRow(
                             modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(14.dp)
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.AccessTime,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Text(
-                                    text = viewModel.hora.ifEmpty { "Seleccionar hora" },
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = if (viewModel.hora.isEmpty())
-                                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-                                    else MaterialTheme.colorScheme.onSurface
+                            HorasDisponibles.forEach { hora ->
+                                val horaValue = "$hora:00"
+                                val selected = viewModel.hora == horaValue
+                                FilterChip(
+                                    selected = selected,
+                                    onClick = { viewModel.onHoraChange(horaValue) },
+                                    label = { Text(hora, fontSize = 13.sp) },
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                        selectedLabelColor = Color.White
+                                    ),
+                                    border = FilterChipDefaults.filterChipBorder(
+                                        enabled = true,
+                                        selected = selected,
+                                        borderColor = MaterialTheme.colorScheme.primary,
+                                        selectedBorderColor = MaterialTheme.colorScheme.primary
+                                    )
                                 )
                             }
                         }

@@ -1,5 +1,11 @@
 package com.manuel.tutalleraunclic.ui.screens.establecimientos
 
+import android.Manifest
+import android.annotation.SuppressLint
+import android.content.pm.PackageManager
+import android.location.Location
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -23,19 +29,28 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
+import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.LatLngBounds
+import com.google.android.gms.tasks.CancellationTokenSource
+import com.google.maps.android.compose.CameraPositionState
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
+import com.google.maps.android.compose.Polyline
 import com.google.maps.android.compose.rememberCameraPositionState
 import com.manuel.tutalleraunclic.core.navigation.Routes
 import com.manuel.tutalleraunclic.data.model.entity.Calificacion
@@ -43,6 +58,10 @@ import com.manuel.tutalleraunclic.data.model.entity.Establecimiento
 import com.manuel.tutalleraunclic.data.model.entity.Servicio
 import com.manuel.tutalleraunclic.utils.fixImageUrl
 import com.manuel.tutalleraunclic.viewmodel.DetalleViewModel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 
 // ─── Paleta local ─────────────────────────────────────────────────────────────
 private val Azul         = Color(0xFF2563EB)
@@ -55,19 +74,79 @@ private val EstrellaBaja = Color(0xFFD1D5DB)
 // PANTALLA PRINCIPAL
 // ═══════════════════════════════════════════════════════════════════════════════
 
+@SuppressLint("MissingPermission")
 @Composable
 fun DetalleEstablecimientoScreen(
     establecimientoId: Int,
     navController: NavController,
     viewModel: DetalleViewModel = hiltViewModel()
 ) {
-    val state by viewModel.uiState.collectAsState()
+    val state          by viewModel.uiState.collectAsState()
+    val routePoints    by viewModel.routePoints.collectAsState()
+    val isLoadingRoute by viewModel.isLoadingRoute.collectAsState()
+    val routeError     by viewModel.routeError.collectAsState()
+    val context        = LocalContext.current
+
+    var permissionMsg  by remember { mutableStateOf<String?>(null) }
+    val cameraState    = rememberCameraPositionState()
+    val scope          = rememberCoroutineScope()
+
+    val est    = state.establecimiento
+    val estLat = est?.latitud?.toDoubleOrNull()
+    val estLng = est?.longitud?.toDoubleOrNull()
+
+    // Helper: obtiene la ubicación del usuario y delega la red al ViewModel
+    fun fetchLocationAndRoute(lat: Double, lng: Double) {
+        scope.launch {
+            try {
+                val cancelToken = CancellationTokenSource()
+                val fusedClient = LocationServices.getFusedLocationProviderClient(context)
+                val userLoc: Location? = suspendCancellableCoroutine { cont ->
+                    fusedClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, cancelToken.token)
+                        .addOnSuccessListener { cont.resume(it) }
+                        .addOnFailureListener { cont.resumeWithException(it) }
+                    cont.invokeOnCancellation { cancelToken.cancel() }
+                }
+                userLoc?.let { loc ->
+                    viewModel.cargarRuta(loc.latitude, loc.longitude, lat, lng)
+                }
+            } catch (_: Exception) { }
+        }
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            permissionMsg = null
+            val lat = estLat ?: return@rememberLauncherForActivityResult
+            val lng = estLng ?: return@rememberLauncherForActivityResult
+            fetchLocationAndRoute(lat, lng)
+        } else {
+            permissionMsg = "Permiso de ubicación denegado"
+        }
+    }
 
     LaunchedEffect(establecimientoId) {
         viewModel.cargar(establecimientoId)
     }
 
-    val est = state.establecimiento
+    // Centrar cámara cuando carga el establecimiento
+    LaunchedEffect(est) {
+        if (estLat != null && estLng != null && estLat != 0.0 && estLng != 0.0) {
+            cameraState.position = CameraPosition.fromLatLngZoom(LatLng(estLat, estLng), 15f)
+        }
+    }
+
+    // Animar cámara al recibir la ruta
+    LaunchedEffect(routePoints) {
+        if (routePoints.isNotEmpty() && estLat != null && estLng != null) {
+            val builder = LatLngBounds.Builder()
+            routePoints.forEach { builder.include(it) }
+            builder.include(LatLng(estLat, estLng))
+            cameraState.animate(CameraUpdateFactory.newLatLngBounds(builder.build(), 100))
+        }
+    }
 
     Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
 
@@ -87,8 +166,8 @@ fun DetalleEstablecimientoScreen(
             item {
                 if (est != null) {
                     InfoPrincipal(
-                        establecimiento  = est,
-                        totalResenas     = state.resenas.size
+                        establecimiento = est,
+                        totalResenas    = state.resenas.size
                     )
                 }
             }
@@ -100,10 +179,24 @@ fun DetalleEstablecimientoScreen(
                     val lng = est.longitud.toDoubleOrNull()
                     if (lat != null && lng != null && lat != 0.0 && lng != 0.0) {
                         UbicacionSection(
-                            direccion = est.direccion,
-                            lat       = lat,
-                            lng       = lng,
-                            nombre    = est.nombre
+                            direccion      = est.direccion,
+                            lat            = lat,
+                            lng            = lng,
+                            nombre         = est.nombre,
+                            routePoints    = routePoints,
+                            isLoadingRoute = isLoadingRoute,
+                            errorMsg       = permissionMsg ?: routeError,
+                            cameraState    = cameraState,
+                            onComoLlegar   = {
+                                val granted = ContextCompat.checkSelfPermission(
+                                    context, Manifest.permission.ACCESS_FINE_LOCATION
+                                ) == PackageManager.PERMISSION_GRANTED
+                                if (granted) {
+                                    fetchLocationAndRoute(lat, lng)
+                                } else {
+                                    permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                                }
+                            }
                         )
                     }
                 }
@@ -169,7 +262,6 @@ fun DetalleEstablecimientoScreen(
             }
         }
 
-        // Indicador de carga sobre el contenido
         if (state.isLoading && est == null) {
             CircularProgressIndicator(
                 modifier = Modifier.align(Alignment.Center),
@@ -193,7 +285,6 @@ private fun HeaderBanner(
             .fillMaxWidth()
             .height(300.dp)
     ) {
-        // Imagen del establecimiento (o placeholder gris)
         AsyncImage(
             model = fixImageUrl(establecimiento?.foto_url)
                 ?: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800",
@@ -202,7 +293,6 @@ private fun HeaderBanner(
             modifier = Modifier.fillMaxSize()
         )
 
-        // Degradado: oscuro arriba (botón) → transparente en medio → oscuro abajo (nombre)
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -215,7 +305,6 @@ private fun HeaderBanner(
                 )
         )
 
-        // Botón volver — esquina superior izquierda
         IconButton(
             onClick = onBack,
             modifier = Modifier
@@ -226,42 +315,40 @@ private fun HeaderBanner(
                 .background(Color.Black.copy(alpha = 0.35f))
         ) {
             Icon(
-                imageVector     = Icons.Default.ArrowBack,
+                imageVector        = Icons.Default.ArrowBack,
                 contentDescription = "Volver",
-                tint            = Color.White
+                tint               = Color.White
             )
         }
 
-        // Nombre del establecimiento — esquina inferior izquierda
         Column(
             modifier = Modifier
                 .align(Alignment.BottomStart)
                 .padding(horizontal = 20.dp, vertical = 18.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            // Badge de tipo
             establecimiento?.tipo_nombre?.let { tipo ->
                 Surface(
                     shape = RoundedCornerShape(20.dp),
                     color = Azul.copy(alpha = 0.85f)
                 ) {
                     Text(
-                        text     = tipo.replaceFirstChar { it.uppercase() },
-                        color    = Color.White,
-                        fontSize = 12.sp,
+                        text       = tipo.replaceFirstChar { it.uppercase() },
+                        color      = Color.White,
+                        fontSize   = 12.sp,
                         fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                        modifier   = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
                     )
                 }
             }
             Text(
-                text       = establecimiento?.nombre ?: "",
-                style      = MaterialTheme.typography.headlineSmall.copy(
+                text     = establecimiento?.nombre ?: "",
+                style    = MaterialTheme.typography.headlineSmall.copy(
                     fontWeight = FontWeight.Bold,
                     color      = Color.White
                 ),
-                maxLines   = 2,
-                overflow   = TextOverflow.Ellipsis
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
             )
         }
     }
@@ -282,23 +369,20 @@ private fun InfoPrincipal(
             .padding(horizontal = 20.dp, vertical = 18.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        // Nombre + tipo (texto plano, el badge está en el header)
         Text(
             text  = establecimiento.nombre,
             style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
         )
 
-        // Rating row
         val rating = establecimiento.promedio_calificacion ?: 0.0
         EstrellaRating(rating = rating, total = totalResenas)
 
-        // Chips secundarios
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             if (establecimiento.telefono.isNotBlank()) {
                 InfoChip(
-                    icono   = Icons.Default.Phone,
-                    texto   = establecimiento.telefono,
-                    fondo   = MaterialTheme.colorScheme.secondaryContainer,
+                    icono      = Icons.Default.Phone,
+                    texto      = establecimiento.telefono,
+                    fondo      = MaterialTheme.colorScheme.secondaryContainer,
                     textoColor = MaterialTheme.colorScheme.onSecondaryContainer
                 )
             }
@@ -313,12 +397,11 @@ private fun InfoPrincipal(
             }
         }
 
-        // Descripción
         if (establecimiento.descripcion.isNotBlank()) {
             Text(
-                text  = establecimiento.descripcion,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.75f),
+                text     = establecimiento.descripcion,
+                style    = MaterialTheme.typography.bodyMedium,
+                color    = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.75f),
                 maxLines = 4,
                 overflow = TextOverflow.Ellipsis
             )
@@ -356,25 +439,25 @@ private fun UbicacionSection(
     direccion: String,
     lat: Double,
     lng: Double,
-    nombre: String
+    nombre: String,
+    routePoints: List<LatLng>,
+    isLoadingRoute: Boolean,
+    errorMsg: String?,
+    cameraState: CameraPositionState,
+    onComoLlegar: () -> Unit
 ) {
-    Column(
-        modifier = Modifier.fillMaxWidth()
-    ) {
+    val latLng = remember(lat, lng) { LatLng(lat, lng) }
+
+    Column(modifier = Modifier.fillMaxWidth()) {
         SeccionTitulo(titulo = "Ubicación", icono = Icons.Default.LocationOn)
 
-        // Dirección textual
         Row(
             modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            Icon(
-                Icons.Default.LocationOn,
-                contentDescription = null,
-                tint     = Azul,
-                modifier = Modifier.size(16.dp)
-            )
+            Icon(Icons.Default.LocationOn, contentDescription = null,
+                tint = Azul, modifier = Modifier.size(16.dp))
             Text(
                 text  = direccion,
                 style = MaterialTheme.typography.bodyMedium,
@@ -384,36 +467,66 @@ private fun UbicacionSection(
 
         Spacer(Modifier.height(10.dp))
 
-        // Mini mapa no interactivo
-        val latLng      = LatLng(lat, lng)
-        val cameraState = rememberCameraPositionState {
-            position = CameraPosition.fromLatLngZoom(latLng, 15f)
-        }
         Card(
             modifier  = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp)
-                .height(200.dp),
+                .height(350.dp),
             shape     = RoundedCornerShape(16.dp),
             elevation = CardDefaults.cardElevation(2.dp)
         ) {
             GoogleMap(
-                modifier             = Modifier.fillMaxSize(),
-                cameraPositionState  = cameraState,
-                uiSettings           = MapUiSettings(
-                    scrollGesturesEnabled   = false,
-                    zoomGesturesEnabled     = false,
-                    zoomControlsEnabled     = false,
+                modifier            = Modifier.fillMaxSize(),
+                cameraPositionState = cameraState,
+                uiSettings          = MapUiSettings(
+                    scrollGesturesEnabled   = true,
+                    zoomGesturesEnabled     = true,
+                    zoomControlsEnabled     = true,
                     rotationGesturesEnabled = false,
                     tiltGesturesEnabled     = false,
                     myLocationButtonEnabled = false,
                     mapToolbarEnabled       = false
                 )
             ) {
-                Marker(
-                    state = MarkerState(position = latLng),
-                    title = nombre
+                Marker(state = MarkerState(position = latLng), title = nombre)
+                if (routePoints.isNotEmpty()) {
+                    Polyline(points = routePoints, color = Azul, width = 8f)
+                }
+            }
+        }
+
+        errorMsg?.let { msg ->
+            Text(
+                text     = msg,
+                color    = MaterialTheme.colorScheme.error,
+                style    = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)
+            )
+        }
+
+        Spacer(Modifier.height(12.dp))
+
+        Button(
+            onClick  = onComoLlegar,
+            enabled  = !isLoadingRoute,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp)
+                .height(52.dp),
+            shape  = RoundedCornerShape(12.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Azul)
+        ) {
+            if (isLoadingRoute) {
+                CircularProgressIndicator(
+                    color       = Color.White,
+                    strokeWidth = 2.dp,
+                    modifier    = Modifier.size(22.dp)
                 )
+            } else {
+                Icon(Icons.Default.LocationOn, contentDescription = null,
+                    tint = Color.White, modifier = Modifier.size(20.dp))
+                Spacer(Modifier.width(8.dp))
+                Text("Cómo llegar", fontWeight = FontWeight.Bold, color = Color.White)
             }
         }
 
@@ -440,12 +553,10 @@ private val PROMOS_EJEMPLO = listOf(
 @Composable
 private fun PromocionesSection() {
     LazyRow(
-        contentPadding      = PaddingValues(horizontal = 20.dp, vertical = 4.dp),
+        contentPadding        = PaddingValues(horizontal = 20.dp, vertical = 4.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        items(PROMOS_EJEMPLO) { promo ->
-            PromoCard(promo)
-        }
+        items(PROMOS_EJEMPLO) { promo -> PromoCard(promo) }
     }
     Spacer(Modifier.height(8.dp))
     HorizontalDivider(
@@ -461,24 +572,22 @@ private fun PromoCard(promo: Promo) {
             .width(200.dp)
             .height(110.dp)
             .clip(RoundedCornerShape(16.dp))
-            .background(
-                Brush.linearGradient(listOf(Azul, Morado))
-            )
+            .background(Brush.linearGradient(listOf(Azul, Morado)))
             .padding(16.dp)
     ) {
         Column(verticalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxSize()) {
             Text(
-                text       = promo.titulo,
-                style      = MaterialTheme.typography.titleSmall.copy(
+                text     = promo.titulo,
+                style    = MaterialTheme.typography.titleSmall.copy(
                     fontWeight = FontWeight.Bold,
                     color      = Color.White
                 ),
-                maxLines   = 1,
-                overflow   = TextOverflow.Ellipsis
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
             Text(
-                text  = promo.subtitulo,
-                style = MaterialTheme.typography.labelSmall.copy(color = Color.White.copy(alpha = 0.8f)),
+                text     = promo.subtitulo,
+                style    = MaterialTheme.typography.labelSmall.copy(color = Color.White.copy(alpha = 0.8f)),
                 maxLines = 2
             )
             Surface(
@@ -535,14 +644,13 @@ fun EstrellaRating(rating: Double, total: Int) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        // 5 estrellas coloreadas según el rating
         Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
             repeat(5) { index ->
                 Icon(
-                    imageVector = Icons.Default.Star,
+                    imageVector        = Icons.Default.Star,
                     contentDescription = null,
-                    tint = if (index < rating) Estrella else EstrellaBaja,
-                    modifier = Modifier.size(20.dp)
+                    tint               = if (index < rating) Estrella else EstrellaBaja,
+                    modifier           = Modifier.size(20.dp)
                 )
             }
         }
@@ -576,7 +684,6 @@ fun ServicioCard(servicio: Servicio, onAgendar: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            // Ícono de llave/herramienta con fondo azul
             Box(
                 modifier = Modifier
                     .size(48.dp)
@@ -585,18 +692,17 @@ fun ServicioCard(servicio: Servicio, onAgendar: () -> Unit) {
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = Icons.Default.Build,
+                    imageVector        = Icons.Default.Build,
                     contentDescription = null,
-                    tint        = Azul,
-                    modifier    = Modifier.size(26.dp)
+                    tint               = Azul,
+                    modifier           = Modifier.size(26.dp)
                 )
             }
 
-            // Nombre
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text   = servicio.nombre,
-                    style  = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+                    text     = servicio.nombre,
+                    style    = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -607,11 +713,10 @@ fun ServicioCard(servicio: Servicio, onAgendar: () -> Unit) {
                 )
             }
 
-            // Botón agendar
             Button(
-                onClick = onAgendar,
-                shape   = RoundedCornerShape(10.dp),
-                colors  = ButtonDefaults.buttonColors(containerColor = Azul),
+                onClick        = onAgendar,
+                shape          = RoundedCornerShape(10.dp),
+                colors         = ButtonDefaults.buttonColors(containerColor = Azul),
                 contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
             ) {
                 Text("Agendar", fontSize = 13.sp, fontWeight = FontWeight.Bold)
@@ -641,19 +746,16 @@ fun ResenaCard(resena: Calificacion) {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // Avatar circular con inicial
                 Box(
                     modifier = Modifier
                         .size(42.dp)
                         .clip(CircleShape)
-                        .background(
-                            Brush.linearGradient(listOf(AzulClaro, Morado))
-                        ),
+                        .background(Brush.linearGradient(listOf(AzulClaro, Morado))),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text       = "U",
-                        style      = MaterialTheme.typography.titleMedium.copy(
+                        text  = "U",
+                        style = MaterialTheme.typography.titleMedium.copy(
                             color      = Color.White,
                             fontWeight = FontWeight.Bold
                         )
@@ -672,7 +774,6 @@ fun ResenaCard(resena: Calificacion) {
                     )
                 }
 
-                // Estrellas compactas
                 Row(horizontalArrangement = Arrangement.spacedBy(1.dp)) {
                     repeat(5) { index ->
                         Icon(

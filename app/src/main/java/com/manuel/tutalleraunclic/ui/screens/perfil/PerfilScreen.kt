@@ -34,6 +34,9 @@ import com.manuel.tutalleraunclic.data.model.entity.displayUsername
 import com.manuel.tutalleraunclic.ui.components.DesactivarCuentaSection
 import com.manuel.tutalleraunclic.ui.components.TemaCard
 import com.manuel.tutalleraunclic.viewmodel.PerfilViewModel
+import androidx.compose.foundation.Image
+import androidx.compose.ui.res.painterResource
+import com.manuel.tutalleraunclic.R
 import com.manuel.tutalleraunclic.viewmodel.UiEvent
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -69,7 +72,23 @@ fun PerfilScreen(
     }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Mi perfil") }) },
+        topBar = {
+            TopAppBar(
+                title = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.logo_solo),
+                            contentDescription = "Logo",
+                            modifier = Modifier.size(32.dp).clip(CircleShape)
+                        )
+                        Text("Mi perfil", fontWeight = FontWeight.Bold)
+                    }
+                }
+            )
+        },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
         Box(

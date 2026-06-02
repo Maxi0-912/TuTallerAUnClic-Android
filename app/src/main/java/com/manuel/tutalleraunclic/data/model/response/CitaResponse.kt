@@ -13,4 +13,5 @@ data class CitaResponse(
     val vehiculo_placa: String? = null,
     val tiene_resena: Boolean = false,
     val descripcion: String? = null,
+    val comentario_empresa: String? = null,
 )

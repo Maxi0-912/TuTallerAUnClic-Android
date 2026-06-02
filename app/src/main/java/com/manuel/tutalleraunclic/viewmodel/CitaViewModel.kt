@@ -85,13 +85,13 @@ class CitaViewModel @Inject constructor(
     private fun validar(): String? = when {
         fecha.isBlank() -> "Selecciona una fecha"
         hora.isBlank()  -> "Selecciona una hora"
-        placa.isBlank() -> "Ingresa la placa del vehículo"
         else            -> null
     }
 
     fun crearCita() {
         val error = validar()
         if (error != null) { emitirError(error); return }
+        if (placa.isBlank()) { emitirError("Ingresa la placa del vehículo"); return }
         if (establecimientoId == null || servicioId == null) {
             emitirError("Selecciona establecimiento y servicio"); return
         }

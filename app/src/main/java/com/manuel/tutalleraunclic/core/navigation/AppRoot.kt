@@ -22,6 +22,7 @@ import com.manuel.tutalleraunclic.ui.screens.register.RegisterScreen
 import com.manuel.tutalleraunclic.ui.screens.establecimientos.*
 import com.manuel.tutalleraunclic.ui.screens.citas.*
 import com.manuel.tutalleraunclic.ui.screens.perfil.PerfilEmpresaScreen
+import com.manuel.tutalleraunclic.ui.screens.perfil.PerfilScreen
 import com.manuel.tutalleraunclic.ui.screens.perfil.EditarPerfilScreen
 import com.manuel.tutalleraunclic.ui.screens.mapa.MapScreen
 import com.manuel.tutalleraunclic.ui.screens.notificaciones.NotificacionesScreen
@@ -259,14 +260,28 @@ fun AppRoot(
 
             // 👤 PERFIL
             composable(Routes.PERFIL) {
-                PerfilEmpresaScreen(
-                    onNavigateToLogin = {
-                        navController.navigate(Routes.LOGIN) {
-                            popUpTo(0) { inclusive = true }
-                            launchSingleTop = true
+                if (rolActual?.lowercase() == "empresa") {
+                    PerfilEmpresaScreen(
+                        onNavigateToLogin = {
+                            navController.navigate(Routes.LOGIN) {
+                                popUpTo(0) { inclusive = true }
+                                launchSingleTop = true
+                            }
                         }
-                    }
-                )
+                    )
+                } else {
+                    PerfilScreen(
+                        onNavigateToLogin = {
+                            navController.navigate(Routes.LOGIN) {
+                                popUpTo(0) { inclusive = true }
+                                launchSingleTop = true
+                            }
+                        },
+                        onNavigateToEditarPerfil = {
+                            navController.navigate(Routes.EDITAR_PERFIL)
+                        }
+                    )
+                }
             }
 
             composable(Routes.EDITAR_PERFIL) {

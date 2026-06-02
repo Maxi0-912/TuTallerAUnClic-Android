@@ -5,6 +5,7 @@ import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -13,9 +14,12 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -26,7 +30,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -36,6 +42,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.google.android.gms.location.LocationServices
+import com.manuel.tutalleraunclic.R
 import com.manuel.tutalleraunclic.utils.fixImageUrl
 import com.manuel.tutalleraunclic.core.navigation.Routes
 import com.manuel.tutalleraunclic.data.model.EstablecimientoUI
@@ -136,10 +143,16 @@ fun EstablecimientosScreen(navController: NavController) {
         topBar = {
             TopAppBar(
                 title = {
-                    Text(
-                        "TuTallerAUnClic",
-                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
-                    )
+                    Box(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.logo_solo),
+                            contentDescription = "Tu Taller a un Clic",
+                            modifier = Modifier.size(40.dp).clip(CircleShape)
+                        )
+                    }
                 }
             )
         }
@@ -192,7 +205,7 @@ fun EstablecimientosScreen(navController: NavController) {
 
             // ── LAVADEROS ────────────────────────────────────────────────────
             item {
-                SeccionTitulo(titulo = "🚿 Lavaderos cerca de ti")
+                SeccionTitulo(titulo = "Lavaderos cerca de ti", icono = Icons.Default.WaterDrop)
             }
             item {
                 when {
@@ -217,7 +230,7 @@ fun EstablecimientosScreen(navController: NavController) {
 
             // ── TALLERES ─────────────────────────────────────────────────────
             item {
-                SeccionTitulo(titulo = "🔧 Talleres cerca de ti")
+                SeccionTitulo(titulo = "Talleres cerca de ti", icono = Icons.Default.Build)
             }
             item {
                 when {
@@ -332,13 +345,34 @@ private fun BannerCard(banner: BannerItem) {
 }
 
 @Composable
-private fun SeccionTitulo(titulo: String, onVerTodos: () -> Unit = {}) {
+private fun SeccionTitulo(
+    titulo: String,
+    icono: ImageVector? = null,
+    onVerTodos: () -> Unit = {}
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(start = 16.dp, end = 4.dp, top = 8.dp, bottom = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        if (icono != null) {
+            Box(
+                modifier = Modifier
+                    .size(32.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icono,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+            Spacer(Modifier.width(8.dp))
+        }
         Text(
             text = titulo,
             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),

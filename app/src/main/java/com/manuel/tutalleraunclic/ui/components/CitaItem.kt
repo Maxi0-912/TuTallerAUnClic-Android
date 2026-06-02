@@ -2,8 +2,6 @@ package com.manuel.tutalleraunclic.ui.components
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -18,7 +16,8 @@ fun CitaItem(
     cita: CitaResponse,
     onDelete: () -> Unit,
     onEdit: () -> Unit,
-    onCalificar: (() -> Unit)? = null
+    onCalificar: (() -> Unit)? = null,
+    onVerDetalle: (() -> Unit)? = null
 ) {
     val estadoColor = when (cita.estado.lowercase()) {
         "confirmada" -> Color(0xFF2E7D32)
@@ -94,27 +93,27 @@ fun CitaItem(
                 )
             }
 
+            if (!cita.descripcion.isNullOrBlank()) {
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = "📝 ${cita.descripcion}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                )
+            }
+
             Spacer(modifier = Modifier.height(14.dp))
 
             when {
-                cita.estado.lowercase() == "finalizada" && cita.tiene_resena -> {
-                    Text(
-                        "Ya calificaste este servicio",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
                 cita.estado.lowercase() == "finalizada" -> {
                     Button(
-                        onClick = { onCalificar?.invoke() },
+                        onClick = { onVerDetalle?.invoke() },
                         modifier = Modifier.fillMaxWidth(),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.tertiary
+                            containerColor = Color(0xFF2563EB)
                         )
                     ) {
-                        Icon(Icons.Default.Star, null, modifier = Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text("Calificar servicio")
+                        Text("Ver detalle")
                     }
                 }
                 cita.estado.lowercase() == "cancelada" -> { /* sin acciones */ }
