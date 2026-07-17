@@ -217,7 +217,7 @@ fun LoginScreen(
                     text = "¿Olvidaste tu contraseña?",
                     fontSize = 12.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = Color(0xFF4F8EF7)
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
 
@@ -303,7 +303,7 @@ fun LoginScreen(
                     .fillMaxWidth()
                     .height(54.dp),
                 shape = RoundedCornerShape(14.dp),
-                border = BorderStroke(1.dp, Color(0xFF2D2D4A)),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                 colors = ButtonDefaults.outlinedButtonColors(
                     containerColor = MaterialTheme.colorScheme.surface
                 )
@@ -344,7 +344,7 @@ fun LoginScreen(
                     text = "Regístrate",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = Color(0xFF4F8EF7),
+                    color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.clickable(onClick = onNavigateToRegister)
                 )
             }

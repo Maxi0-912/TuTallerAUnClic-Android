@@ -3,13 +3,13 @@ package com.manuel.tutalleraunclic.ui.theme
 import androidx.compose.ui.graphics.Color
 
 // ── LIGHT ────────────────────────────────────────────────
-val Primary      = Color(0xFF1565C0)
-val Secondary    = Color(0xFF42A5F5)
-val Accent       = Color(0xFFFFB300)
-val Background   = Color(0xFFF1F5F9)
-val Surface      = Color(0xFFFFFFFF)
-val TextPrimary  = Color(0xFF0F172A)
-val TextSecondary= Color(0xFF64748B)
+val Primary       = Color(0xFF2563EB)
+val Secondary     = Color(0xFF1E3A5F)
+val Accent        = Color(0xFFFFB300)
+val Background    = Color(0xFFF8FAFC)
+val Surface       = Color(0xFFFFFFFF)
+val TextPrimary   = Color(0xFF1E293B)
+val TextSecondary = Color(0xFF64748B)
 
 // ── DARK (modern slate/navy) ─────────────────────────────
 val DarkBackground     = Color(0xFF0B1120)

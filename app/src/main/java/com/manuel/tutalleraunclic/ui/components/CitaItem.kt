@@ -22,7 +22,7 @@ fun CitaItem(
     val estadoColor = when (cita.estado.lowercase()) {
         "confirmada" -> Color(0xFF2E7D32)
         "pendiente"  -> Color(0xFFF57C00)
-        "finalizada" -> Color(0xFF1565C0)
+        "finalizada" -> Color(0xFF16A34A)
         "cancelada"  -> Color(0xFFC62828)
         else         -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
     }
@@ -110,7 +110,7 @@ fun CitaItem(
                         onClick = { onVerDetalle?.invoke() },
                         modifier = Modifier.fillMaxWidth(),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF2563EB)
+                            containerColor = MaterialTheme.colorScheme.primary
                         )
                     ) {
                         Text("Ver detalle")

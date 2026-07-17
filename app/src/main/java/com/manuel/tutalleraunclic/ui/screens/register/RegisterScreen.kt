@@ -32,11 +32,6 @@ import com.manuel.tutalleraunclic.R
 import com.manuel.tutalleraunclic.viewmodel.RegisterViewModel
 import com.manuel.tutalleraunclic.viewmodel.UiEvent
 
-private val Azul        = Color(0xFF2563EB)
-private val FondoBlanco = Color(0xFFFFFFFF)
-private val GrisBorde   = Color(0xFFD1D5DB)
-private val GrisLabel   = Color(0xFF6B7280)
-private val GrisFondo   = Color(0xFFF9FAFB)
 
 @Composable
 fun RegisterScreen(
@@ -79,12 +74,12 @@ fun RegisterScreen(
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        containerColor = FondoBlanco
+        containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(FondoBlanco)
+                .background(MaterialTheme.colorScheme.background)
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 24.dp, vertical = 32.dp),
@@ -107,12 +102,12 @@ fun RegisterScreen(
                     text = "Crear cuenta",
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF111827)
+                    color = MaterialTheme.colorScheme.onBackground
                 )
                 Text(
                     text = "Regístrate en Tu Taller a un Clic",
                     fontSize = 14.sp,
-                    color = GrisLabel,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
                 )
             }
@@ -238,7 +233,7 @@ fun RegisterScreen(
                     .fillMaxWidth()
                     .height(48.dp),
                 shape = RoundedCornerShape(8.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Azul)
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) {
                 if (state.isLoading) {
                     CircularProgressIndicator(
@@ -256,11 +251,11 @@ fun RegisterScreen(
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("¿Ya tienes cuenta? ", fontSize = 14.sp, color = GrisLabel)
+                Text("¿Ya tienes cuenta? ", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text(
                     text = "Inicia sesión",
                     fontSize = 14.sp,
-                    color = Azul,
+                    color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.clickable { onNavigateToLogin() }
                 )
@@ -279,9 +274,9 @@ private fun RolCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val borderColor = if (seleccionado) Azul else GrisBorde
+    val borderColor = if (seleccionado) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
     val borderWidth = if (seleccionado) 2.dp else 1.dp
-    val fondoColor  = if (seleccionado) Color(0xFFEFF6FF) else FondoBlanco
+    val fondoColor  = if (seleccionado) MaterialTheme.colorScheme.primary.copy(alpha = 0.08f) else MaterialTheme.colorScheme.surface
 
     Box(
         modifier = modifier
@@ -300,12 +295,12 @@ private fun RolCard(
                 text = titulo,
                 fontWeight = if (seleccionado) FontWeight.Bold else FontWeight.SemiBold,
                 fontSize = 14.sp,
-                color = if (seleccionado) Azul else Color(0xFF111827)
+                color = if (seleccionado) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground
             )
             Text(
                 text = descripcion,
                 fontSize = 11.sp,
-                color = GrisLabel,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
                 lineHeight = 14.sp
             )
@@ -322,7 +317,7 @@ private fun CampoTexto(
     keyboardType: KeyboardType = KeyboardType.Text
 ) {
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Text(label, fontSize = 13.sp, color = GrisLabel, fontWeight = FontWeight.Medium)
+        Text(label, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Medium)
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
@@ -331,10 +326,10 @@ private fun CampoTexto(
             shape = RoundedCornerShape(8.dp),
             keyboardOptions = KeyboardOptions(keyboardType = keyboardType, autoCorrect = false),
             colors = OutlinedTextFieldDefaults.colors(
-                unfocusedBorderColor = GrisBorde,
-                focusedBorderColor = Azul,
-                unfocusedContainerColor = GrisFondo,
-                focusedContainerColor = FondoBlanco
+                unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                unfocusedContainerColor = MaterialTheme.colorScheme.background,
+                focusedContainerColor = MaterialTheme.colorScheme.surface
             )
         )
     }
@@ -350,7 +345,7 @@ private fun CampoPassword(
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Text(label, fontSize = 13.sp, color = GrisLabel, fontWeight = FontWeight.Medium)
+        Text(label, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Medium)
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
@@ -365,15 +360,15 @@ private fun CampoPassword(
                         imageVector = if (visible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
                         contentDescription = null,
                         modifier = Modifier.size(18.dp),
-                        tint = GrisLabel
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             },
             colors = OutlinedTextFieldDefaults.colors(
-                unfocusedBorderColor = GrisBorde,
-                focusedBorderColor = Azul,
-                unfocusedContainerColor = GrisFondo,
-                focusedContainerColor = FondoBlanco
+                unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                unfocusedContainerColor = MaterialTheme.colorScheme.background,
+                focusedContainerColor = MaterialTheme.colorScheme.surface
             )
         )
     }
