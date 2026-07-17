@@ -22,7 +22,7 @@ android {
         // Emulador → "http://10.0.2.2:8000/"
         // Dispositivo físico (misma red) → "http://192.168.X.X:8000/"
         // Producción → "https://tu-dominio.com/"
-        buildConfigField("String", "BASE_URL", "\"https://unthinkingly-unsoporiferous-brentley.ngrok-free.dev/\"")
+        buildConfigField("String", "BASE_URL", "\"https://backendfull-production-d0b9.up.railway.app/\"")
     }
 
     buildTypes {

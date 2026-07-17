@@ -374,7 +374,7 @@ private fun InfoPrincipal(
             style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
         )
 
-        val rating = establecimiento.promedio_calificacion ?: 0.0
+        val rating = establecimiento.calificacion_promedio ?: 0.0
         EstrellaRating(rating = rating, total = totalResenas)
 
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

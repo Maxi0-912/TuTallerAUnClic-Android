@@ -20,7 +20,7 @@ fun Establecimiento.toUI(userLat: Double? = null, userLng: Double? = null): Esta
         nombre       = nombre,
         direccion    = direccion,
         imagenUrl    = fixImageUrl(foto_url) ?: "",
-        rating       = promedio_calificacion ?: 0.0,
+        rating       = calificacion_promedio ?: 0.0,
         totalReviews = 0,
         precioDesde  = "$0",
         latitud      = lat,

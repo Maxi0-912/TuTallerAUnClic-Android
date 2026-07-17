@@ -1,5 +1,7 @@
 package com.manuel.tutalleraunclic.data.model.entity
 
+import com.google.gson.annotations.SerializedName
+
 data class Establecimiento(
     val id: Int,
     val nombre: String,
@@ -17,5 +19,6 @@ data class Establecimiento(
     val foto: String? = null,
     val foto_url: String? = null,
     val fotos_galeria: List<String>? = null,
-    val promedio_calificacion: Double? = null,
+    @SerializedName("calificacion_promedio")
+    val calificacion_promedio: Double? = null,
 )
