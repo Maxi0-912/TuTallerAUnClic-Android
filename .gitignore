@@ -17,3 +17,6 @@ staticfiles/
 
 # Logs
 *.log
+
+# Tooling local
+.claude/
