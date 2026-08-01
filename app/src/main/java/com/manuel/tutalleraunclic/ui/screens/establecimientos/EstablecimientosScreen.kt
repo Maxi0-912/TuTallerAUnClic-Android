@@ -47,46 +47,10 @@ import com.manuel.tutalleraunclic.utils.fixImageUrl
 import com.manuel.tutalleraunclic.core.navigation.Routes
 import com.manuel.tutalleraunclic.data.model.EstablecimientoUI
 import com.manuel.tutalleraunclic.data.model.TipoEstablecimiento
+import com.manuel.tutalleraunclic.data.model.entity.Anuncio
+import com.manuel.tutalleraunclic.viewmodel.AnunciosPublicosViewModel
 import com.manuel.tutalleraunclic.viewmodel.EstablecimientoViewModel
 import kotlinx.coroutines.delay
-
-// ─── Banners de ejemplo ───────────────────────────────────────────────────────
-
-private data class BannerItem(
-    val titulo: String,
-    val descripcion: String,
-    val colores: List<Color>,
-    val icono: String,
-    val etiqueta: String,
-    val imageUrl: String
-)
-
-private val BANNERS = listOf(
-    BannerItem(
-        titulo = "Tu vehículo merece lo mejor",
-        descripcion = "Encuentra talleres y lavaderos cerca de ti, rápido y fácil",
-        colores = listOf(Color(0xFF1E293B), Color(0xFF334155)),
-        icono = "🔧",
-        etiqueta = "DESTACADO",
-        imageUrl = "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=800"
-    ),
-    BannerItem(
-        titulo = "Agenda en segundos",
-        descripcion = "Sin esperas, sin llamadas. Solo toca y reserva tu cita",
-        colores = listOf(Color(0xFF0F172A), Color(0xFF1E3A5F)),
-        icono = "💧",
-        etiqueta = "OFERTA",
-        imageUrl = "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800"
-    ),
-    BannerItem(
-        titulo = "¡Agenda ahora!",
-        descripcion = "Disponibilidad limitada, reserva tu cita hoy mismo",
-        colores = listOf(Color(0xFF1A1A2E), Color(0xFF16213E)),
-        icono = "🔧",
-        etiqueta = "OFERTA",
-        imageUrl = "https://images.unsplash.com/photo-1607860108855-64acf2078ed9?w=800"
-    )
-)
 
 // ─── Pantalla principal ───────────────────────────────────────────────────────
 
@@ -95,6 +59,8 @@ private val BANNERS = listOf(
 fun EstablecimientosScreen(navController: NavController) {
 
     val viewModel: EstablecimientoViewModel = hiltViewModel()
+    val anunciosViewModel: AnunciosPublicosViewModel = hiltViewModel()
+    val banners by anunciosViewModel.banners.collectAsState()
     val context = LocalContext.current
 
     // Solicitar ubicación
@@ -131,11 +97,12 @@ fun EstablecimientosScreen(navController: NavController) {
     }}
 
     // Banner pager
-    val pagerState = rememberPagerState(pageCount = { BANNERS.size })
-    LaunchedEffect(pagerState) {
+    val pagerState = rememberPagerState(pageCount = { banners.size })
+    LaunchedEffect(pagerState, banners.size) {
+        if (banners.size <= 1) return@LaunchedEffect
         while (true) {
             delay(4500)
-            pagerState.animateScrollToPage((pagerState.currentPage + 1) % BANNERS.size)
+            pagerState.animateScrollToPage((pagerState.currentPage + 1) % banners.size)
         }
     }
 
@@ -166,38 +133,40 @@ fun EstablecimientosScreen(navController: NavController) {
         ) {
 
             // ── BANNER CARRUSEL ──────────────────────────────────────────────
-            item {
-                Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
-                    HorizontalPager(
-                        state = pagerState,
-                        modifier = Modifier.fillMaxWidth()
-                    ) { page ->
-                        BannerCard(banner = BANNERS[page])
-                    }
-                    Spacer(Modifier.height(8.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        repeat(BANNERS.size) { idx ->
-                            val selected = idx == pagerState.currentPage
-                            val dotSize by animateDpAsState(
-                                targetValue = if (selected) 12.dp else 7.dp,
-                                label = "dot_size"
-                            )
-                            Box(
-                                modifier = Modifier
-                                    .padding(horizontal = 3.dp)
-                                    .size(dotSize)
-                                    .clip(RoundedCornerShape(50))
-                                    .background(
-                                        if (selected)
-                                            MaterialTheme.colorScheme.primary
-                                        else
-                                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.25f)
-                                    )
-                            )
+            if (banners.isNotEmpty()) {
+                item {
+                    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+                        HorizontalPager(
+                            state = pagerState,
+                            modifier = Modifier.fillMaxWidth()
+                        ) { page ->
+                            BannerCard(banner = banners[page])
+                        }
+                        Spacer(Modifier.height(8.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            repeat(banners.size) { idx ->
+                                val selected = idx == pagerState.currentPage
+                                val dotSize by animateDpAsState(
+                                    targetValue = if (selected) 12.dp else 7.dp,
+                                    label = "dot_size"
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .padding(horizontal = 3.dp)
+                                        .size(dotSize)
+                                        .clip(RoundedCornerShape(50))
+                                        .background(
+                                            if (selected)
+                                                MaterialTheme.colorScheme.primary
+                                            else
+                                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.25f)
+                                        )
+                                )
+                            }
                         }
                     }
                 }
@@ -275,7 +244,7 @@ fun EstablecimientosScreen(navController: NavController) {
 // ─── Composables privados ─────────────────────────────────────────────────────
 
 @Composable
-private fun BannerCard(banner: BannerItem) {
+private fun BannerCard(banner: Anuncio) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -283,7 +252,7 @@ private fun BannerCard(banner: BannerItem) {
             .clip(RoundedCornerShape(20.dp))
     ) {
         AsyncImage(
-            model = banner.imageUrl,
+            model = fixImageUrl(banner.imagen_url),
             contentDescription = null,
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize()
@@ -306,16 +275,20 @@ private fun BannerCard(banner: BannerItem) {
                 .padding(20.dp),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            Box(
-                modifier = Modifier
-                    .background(Color.White.copy(alpha = 0.2f), RoundedCornerShape(20.dp))
-                    .padding(horizontal = 10.dp, vertical = 4.dp)
-            ) {
-                Text(
-                    text = banner.etiqueta,
-                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                    color = Color.White
-                )
+            if (!banner.descuento.isNullOrBlank()) {
+                Box(
+                    modifier = Modifier
+                        .background(Color.White.copy(alpha = 0.2f), RoundedCornerShape(20.dp))
+                        .padding(horizontal = 10.dp, vertical = 4.dp)
+                ) {
+                    Text(
+                        text = banner.descuento,
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                        color = Color.White
+                    )
+                }
+            } else {
+                Spacer(Modifier.height(1.dp))
             }
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(
@@ -323,22 +296,26 @@ private fun BannerCard(banner: BannerItem) {
                     style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.ExtraBold),
                     color = Color.White
                 )
-                Text(
-                    text = banner.descripcion,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color.White.copy(alpha = 0.88f)
-                )
+                if (!banner.descripcion.isNullOrBlank()) {
+                    Text(
+                        text = banner.descripcion,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.White.copy(alpha = 0.88f)
+                    )
+                }
             }
-            Box(
-                modifier = Modifier
-                    .background(Color.White.copy(alpha = 0.2f), RoundedCornerShape(20.dp))
-                    .padding(horizontal = 14.dp, vertical = 6.dp)
-            ) {
-                Text(
-                    text = "Ver más →",
-                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                    color = Color.White
-                )
+            if (!banner.texto_boton.isNullOrBlank()) {
+                Box(
+                    modifier = Modifier
+                        .background(Color.White.copy(alpha = 0.2f), RoundedCornerShape(20.dp))
+                        .padding(horizontal = 14.dp, vertical = 6.dp)
+                ) {
+                    Text(
+                        text = banner.texto_boton,
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                        color = Color.White
+                    )
+                }
             }
         }
     }

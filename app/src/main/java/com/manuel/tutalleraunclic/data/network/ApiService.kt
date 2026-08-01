@@ -6,6 +6,7 @@ import retrofit2.Response
 import retrofit2.http.*
 import com.manuel.tutalleraunclic.data.model.response.CitaResponse
 import com.manuel.tutalleraunclic.data.model.response.LoginResponse
+import com.manuel.tutalleraunclic.data.model.response.CupoAnunciosResponse
 
 interface ApiService {
 
@@ -164,4 +165,59 @@ interface ApiService {
 
     @GET("empresa/dashboard/")
     suspend fun dashboardEmpresa(): Response<Dashboard>
+
+    // ==========================
+    // ANUNCIOS
+    // ==========================
+
+    @GET("anuncios/")
+    suspend fun getAnunciosPublicos(
+        @Query("categoria") categoria: String? = null
+    ): Response<List<Anuncio>>
+
+    @GET("api/empresa/anuncios/")
+    suspend fun getMisAnuncios(): Response<List<Anuncio>>
+
+    @Multipart
+    @POST("api/empresa/anuncios/")
+    suspend fun crearAnuncio(
+        @Part("titulo") titulo: okhttp3.RequestBody,
+        @Part("descripcion") descripcion: okhttp3.RequestBody?,
+        @Part("tipo") tipo: okhttp3.RequestBody,
+        @Part("categoria") categoria: okhttp3.RequestBody,
+        @Part("descuento") descuento: okhttp3.RequestBody?,
+        @Part("texto_boton") textoBoton: okhttp3.RequestBody?,
+        @Part("url_boton") urlBoton: okhttp3.RequestBody?,
+        @Part("establecimiento") establecimiento: okhttp3.RequestBody,
+        @Part("fecha_inicio") fechaInicio: okhttp3.RequestBody?,
+        @Part("fecha_fin") fechaFin: okhttp3.RequestBody?,
+        @Part imagen: okhttp3.MultipartBody.Part?
+    ): Response<Anuncio>
+
+    @Multipart
+    @PATCH("api/empresa/anuncios/{id}/")
+    suspend fun editarAnuncio(
+        @Path("id") id: Int,
+        @Part("titulo") titulo: okhttp3.RequestBody?,
+        @Part("descripcion") descripcion: okhttp3.RequestBody?,
+        @Part("tipo") tipo: okhttp3.RequestBody?,
+        @Part("categoria") categoria: okhttp3.RequestBody?,
+        @Part("descuento") descuento: okhttp3.RequestBody?,
+        @Part("texto_boton") textoBoton: okhttp3.RequestBody?,
+        @Part("url_boton") urlBoton: okhttp3.RequestBody?,
+        @Part("establecimiento") establecimiento: okhttp3.RequestBody?,
+        @Part("fecha_inicio") fechaInicio: okhttp3.RequestBody?,
+        @Part("fecha_fin") fechaFin: okhttp3.RequestBody?,
+        @Part imagen: okhttp3.MultipartBody.Part?
+    ): Response<Anuncio>
+
+    @DELETE("api/empresa/anuncios/{id}/")
+    suspend fun eliminarAnuncio(
+        @Path("id") id: Int
+    ): Response<Unit>
+
+    @GET("api/empresa/anuncios/cupo/")
+    suspend fun getCupoAnuncios(
+        @Query("establecimiento") establecimientoId: Int
+    ): Response<CupoAnunciosResponse>
 }
