@@ -43,6 +43,16 @@ object Routes {
     const val ANUNCIO_EDITAR     = "anuncio_editar"
     const val ANUNCIO_EDITAR_ARG = "anuncio_editar/{anuncioId}"
 
+    const val MIS_ESTABLECIMIENTOS         = "mis_establecimientos"
+    const val ESTABLECIMIENTO_EMP_CREAR    = "establecimiento_emp_crear"
+    const val ESTABLECIMIENTO_EMP_EDITAR   = "establecimiento_emp_editar"
+    const val ESTABLECIMIENTO_EMP_EDITAR_ARG = "establecimiento_emp_editar/{establecimientoId}"
+
+    const val MIS_SERVICIOS      = "mis_servicios"
+    const val SERVICIO_EMP_CREAR = "servicio_emp_crear"
+    const val SERVICIO_EMP_EDITAR = "servicio_emp_editar"
+    const val SERVICIO_EMP_EDITAR_ARG = "servicio_emp_editar/{servicioId}"
+
     const val RESENA_ARG = "resena/{citaId}/{establecimientoId}"
 
     fun cita(establecimientoId: Int, servicioId: Int) =
@@ -56,4 +66,6 @@ object Routes {
         "resena/$citaId/$establecimientoId"
 
     fun anuncioEditar(id: Int) = "$ANUNCIO_EDITAR/$id"
+    fun establecimientoEmpEditar(id: Int) = "$ESTABLECIMIENTO_EMP_EDITAR/$id"
+    fun servicioEmpEditar(id: Int) = "$SERVICIO_EMP_EDITAR/$id"
 }

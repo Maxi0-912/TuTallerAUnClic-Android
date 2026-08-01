@@ -8,6 +8,9 @@ import com.manuel.tutalleraunclic.data.model.response.CitaResponse
 import com.manuel.tutalleraunclic.data.model.response.LoginResponse
 import com.manuel.tutalleraunclic.data.model.response.CupoAnunciosResponse
 import com.manuel.tutalleraunclic.data.model.response.CitaEmpresaResponse
+import com.manuel.tutalleraunclic.data.model.response.DashboardEmpresaResponse
+import com.manuel.tutalleraunclic.data.model.response.EstablecimientoEmpresaResponse
+import com.manuel.tutalleraunclic.data.model.response.ServicioEmpresaResponse
 
 interface ApiService {
 
@@ -79,6 +82,83 @@ interface ApiService {
     suspend fun crearEstablecimiento(
         @Body request: EstablecimientoRequest
     ): Response<Establecimiento>
+
+    // ==========================
+    // MIS ESTABLECIMIENTOS (empresa)
+    // ==========================
+
+    @GET("empresa/mis-establecimientos/")
+    suspend fun getMisEstablecimientos(): Response<List<EstablecimientoEmpresaResponse>>
+
+    @GET("tipos-establecimiento/")
+    suspend fun getTiposEstablecimiento(): Response<List<TipoEstablecimiento>>
+
+    @Multipart
+    @POST("empresa/mis-establecimientos/crear/")
+    suspend fun crearEstablecimientoEmpresa(
+        @Part("nombre") nombre: okhttp3.RequestBody,
+        @Part("direccion") direccion: okhttp3.RequestBody?,
+        @Part("telefono") telefono: okhttp3.RequestBody?,
+        @Part("descripcion") descripcion: okhttp3.RequestBody?,
+        @Part("hora_apertura") horaApertura: okhttp3.RequestBody?,
+        @Part("hora_cierre") horaCierre: okhttp3.RequestBody?,
+        @Part("latitud") latitud: okhttp3.RequestBody,
+        @Part("longitud") longitud: okhttp3.RequestBody,
+        @Part("tipo") tipo: okhttp3.RequestBody,
+        @Part foto: okhttp3.MultipartBody.Part?
+    ): Response<EstablecimientoEmpresaResponse>
+
+    @Multipart
+    @PATCH("empresa/mis-establecimientos/{id}/")
+    suspend fun editarEstablecimientoEmpresa(
+        @Path("id") id: Int,
+        @Part("nombre") nombre: okhttp3.RequestBody?,
+        @Part("direccion") direccion: okhttp3.RequestBody?,
+        @Part("telefono") telefono: okhttp3.RequestBody?,
+        @Part("descripcion") descripcion: okhttp3.RequestBody?,
+        @Part("hora_apertura") horaApertura: okhttp3.RequestBody?,
+        @Part("hora_cierre") horaCierre: okhttp3.RequestBody?,
+        @Part("latitud") latitud: okhttp3.RequestBody?,
+        @Part("longitud") longitud: okhttp3.RequestBody?,
+        @Part("tipo") tipo: okhttp3.RequestBody?,
+        @Part foto: okhttp3.MultipartBody.Part?
+    ): Response<EstablecimientoEmpresaResponse>
+
+    @DELETE("empresa/mis-establecimientos/{id}/")
+    suspend fun eliminarEstablecimientoEmpresa(
+        @Path("id") id: Int
+    ): Response<Unit>
+
+    // ==========================
+    // SERVICIOS (empresa)
+    // ==========================
+
+    @GET("empresa/servicios/")
+    suspend fun getServiciosEmpresa(): Response<List<ServicioEmpresaResponse>>
+
+    @POST("empresa/servicios/crear/")
+    suspend fun crearServicioEmpresa(
+        @Body request: ServicioEmpresaRequest
+    ): Response<ServicioEmpresaResponse>
+
+    @PATCH("empresa/servicios/{id}/")
+    suspend fun editarServicioEmpresa(
+        @Path("id") id: Int,
+        @Body request: ServicioEmpresaRequest
+    ): Response<ServicioEmpresaResponse>
+
+    @DELETE("empresa/servicios/{id}/")
+    suspend fun eliminarServicioEmpresa(
+        @Path("id") id: Int
+    ): Response<Unit>
+
+    @GET("tipos-servicio/")
+    suspend fun getTiposServicio(): Response<List<TipoServicio>>
+
+    @POST("tipos-servicio/crear/")
+    suspend fun crearTipoServicio(
+        @Body request: TipoServicioRequest
+    ): Response<TipoServicio>
 
     // ==========================
     // SERVICIOS
@@ -184,7 +264,7 @@ interface ApiService {
     // ==========================
 
     @GET("empresa/dashboard/")
-    suspend fun dashboardEmpresa(): Response<Dashboard>
+    suspend fun dashboardEmpresa(): Response<DashboardEmpresaResponse>
 
     // ==========================
     // ANUNCIOS

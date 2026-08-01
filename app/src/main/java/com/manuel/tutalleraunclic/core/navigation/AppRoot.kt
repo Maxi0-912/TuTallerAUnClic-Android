@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Card
@@ -39,11 +40,14 @@ import com.manuel.tutalleraunclic.ui.screens.notificaciones.NotificacionesEmpres
 import com.manuel.tutalleraunclic.ui.screens.resena.ResenaScreen
 import com.manuel.tutalleraunclic.ui.screens.anuncios.MisAnunciosScreen
 import com.manuel.tutalleraunclic.ui.screens.anuncios.AnuncioFormScreen
+import com.manuel.tutalleraunclic.ui.screens.dashboard.DashboardEmpresaScreen
 import com.manuel.tutalleraunclic.viewmodel.NotificacionesViewModel
 import com.manuel.tutalleraunclic.viewmodel.RolViewModel
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Campaign
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Store
 
 /**
  * @param isLoggedIn  Whether a valid session token is already stored.
@@ -84,6 +88,12 @@ fun AppRoot(
             currentRoute.startsWith(Routes.MIS_ANUNCIOS) -> false
             currentRoute.startsWith(Routes.ANUNCIO_CREAR) -> false
             currentRoute.startsWith(Routes.ANUNCIO_EDITAR) -> false
+            currentRoute.startsWith(Routes.MIS_ESTABLECIMIENTOS) -> false
+            currentRoute.startsWith(Routes.ESTABLECIMIENTO_EMP_CREAR) -> false
+            currentRoute.startsWith(Routes.ESTABLECIMIENTO_EMP_EDITAR) -> false
+            currentRoute.startsWith(Routes.MIS_SERVICIOS) -> false
+            currentRoute.startsWith(Routes.SERVICIO_EMP_CREAR) -> false
+            currentRoute.startsWith(Routes.SERVICIO_EMP_EDITAR) -> false
             else -> true
         }
     }
@@ -244,11 +254,22 @@ fun AppRoot(
                 )
             }
 
-            // 🏢 EMPRESA HOME
+            // 🏢 EMPRESA HOME (Dashboard)
             composable(Routes.EMPRESA_HOME) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("Panel de empresa - Próximamente", style = MaterialTheme.typography.titleMedium)
-                }
+                DashboardEmpresaScreen(
+                    onVerCitas = {
+                        navController.navigate(Routes.EMPRESA_CITAS) {
+                            popUpTo(navController.graph.startDestinationId)
+                            launchSingleTop = true
+                        }
+                    },
+                    onRegistrarEstablecimiento = {
+                        navController.navigate(Routes.EMPRESA_ESTABLECIMIENTO) {
+                            popUpTo(navController.graph.startDestinationId)
+                            launchSingleTop = true
+                        }
+                    }
+                )
             }
 
             composable(Routes.EMPRESA_CITAS) {
@@ -257,7 +278,9 @@ fun AppRoot(
 
             composable(Routes.EMPRESA_ESTABLECIMIENTO) {
                 EmpresaEstablecimientoHub(
-                    onMisAnuncios = { navController.navigate(Routes.MIS_ANUNCIOS) }
+                    onMisAnuncios = { navController.navigate(Routes.MIS_ANUNCIOS) },
+                    onMisEstablecimientos = { navController.navigate(Routes.MIS_ESTABLECIMIENTOS) },
+                    onMisServicios = { navController.navigate(Routes.MIS_SERVICIOS) }
                 )
             }
 
@@ -285,6 +308,64 @@ fun AppRoot(
                 val anuncioId = backStackEntry.arguments?.getInt("anuncioId") ?: 0
                 AnuncioFormScreen(
                     anuncioId = anuncioId,
+                    onBack = { navController.popBackStack() },
+                    onSuccess = { navController.popBackStack() }
+                )
+            }
+
+            // 🏢 MIS ESTABLECIMIENTOS (empresa)
+            composable(Routes.MIS_ESTABLECIMIENTOS) {
+                MisEstablecimientosScreen(
+                    onBack = { navController.popBackStack() },
+                    onCrear = { navController.navigate(Routes.ESTABLECIMIENTO_EMP_CREAR) },
+                    onEditar = { id -> navController.navigate(Routes.establecimientoEmpEditar(id)) }
+                )
+            }
+
+            composable(Routes.ESTABLECIMIENTO_EMP_CREAR) {
+                EstablecimientoFormScreen(
+                    establecimientoId = null,
+                    onBack = { navController.popBackStack() },
+                    onSuccess = { navController.popBackStack() }
+                )
+            }
+
+            composable(
+                route = Routes.ESTABLECIMIENTO_EMP_EDITAR_ARG,
+                arguments = listOf(navArgument("establecimientoId") { type = NavType.IntType })
+            ) { backStackEntry ->
+                val establecimientoId = backStackEntry.arguments?.getInt("establecimientoId") ?: 0
+                EstablecimientoFormScreen(
+                    establecimientoId = establecimientoId,
+                    onBack = { navController.popBackStack() },
+                    onSuccess = { navController.popBackStack() }
+                )
+            }
+
+            // 🔧 MIS SERVICIOS (empresa)
+            composable(Routes.MIS_SERVICIOS) {
+                MisServiciosScreen(
+                    onBack = { navController.popBackStack() },
+                    onCrear = { navController.navigate(Routes.SERVICIO_EMP_CREAR) },
+                    onEditar = { id -> navController.navigate(Routes.servicioEmpEditar(id)) }
+                )
+            }
+
+            composable(Routes.SERVICIO_EMP_CREAR) {
+                ServicioFormScreen(
+                    servicioId = null,
+                    onBack = { navController.popBackStack() },
+                    onSuccess = { navController.popBackStack() }
+                )
+            }
+
+            composable(
+                route = Routes.SERVICIO_EMP_EDITAR_ARG,
+                arguments = listOf(navArgument("servicioId") { type = NavType.IntType })
+            ) { backStackEntry ->
+                val servicioId = backStackEntry.arguments?.getInt("servicioId") ?: 0
+                ServicioFormScreen(
+                    servicioId = servicioId,
                     onBack = { navController.popBackStack() },
                     onSuccess = { navController.popBackStack() }
                 )
@@ -349,7 +430,11 @@ fun AppRoot(
  * pero deja espacio para agregar servicios/fotos/perfil del taller más adelante.
  */
 @Composable
-private fun EmpresaEstablecimientoHub(onMisAnuncios: () -> Unit) {
+private fun EmpresaEstablecimientoHub(
+    onMisAnuncios: () -> Unit,
+    onMisEstablecimientos: () -> Unit,
+    onMisServicios: () -> Unit
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -360,29 +445,58 @@ private fun EmpresaEstablecimientoHub(onMisAnuncios: () -> Unit) {
             style = MaterialTheme.typography.headlineSmall,
             modifier = Modifier.padding(bottom = 16.dp)
         )
-        Card(
+        HubEntry(
+            icon = Icons.Default.Store,
+            titulo = "Mis establecimientos",
+            subtitulo = "Registra y edita tus talleres y lavaderos",
+            onClick = onMisEstablecimientos
+        )
+        Spacer(Modifier.height(12.dp))
+        HubEntry(
+            icon = Icons.Default.Build,
+            titulo = "Servicios",
+            subtitulo = "Administra los servicios que ofrece cada establecimiento",
+            onClick = onMisServicios
+        )
+        Spacer(Modifier.height(12.dp))
+        HubEntry(
+            icon = Icons.Default.Campaign,
+            titulo = "Mis anuncios / Promociones",
+            subtitulo = "Crea y gestiona los anuncios de tu establecimiento",
+            onClick = onMisAnuncios
+        )
+    }
+}
+
+@Composable
+private fun HubEntry(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    titulo: String,
+    subtitulo: String,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+    ) {
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable { onMisAnuncios() }
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(Icons.Default.Campaign, contentDescription = null)
-                Spacer(Modifier.width(12.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text("Mis anuncios / Promociones", style = MaterialTheme.typography.titleMedium)
-                    Text(
-                        "Crea y gestiona los anuncios de tu establecimiento",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                    )
-                }
-                Icon(Icons.Default.ChevronRight, contentDescription = null)
+            Icon(icon, contentDescription = null)
+            Spacer(Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(titulo, style = MaterialTheme.typography.titleMedium)
+                Text(
+                    subtitulo,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                )
             }
+            Icon(Icons.Default.ChevronRight, contentDescription = null)
         }
     }
 }

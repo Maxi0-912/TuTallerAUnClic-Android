@@ -6,6 +6,7 @@ import com.manuel.tutalleraunclic.data.model.entity.Establecimiento
 import com.manuel.tutalleraunclic.data.model.entity.Notificacion
 import com.manuel.tutalleraunclic.data.model.entity.Usuario
 import com.manuel.tutalleraunclic.data.model.request.*
+import com.manuel.tutalleraunclic.data.model.response.DashboardEmpresaResponse
 import com.manuel.tutalleraunclic.data.model.response.LoginResponse
 import com.manuel.tutalleraunclic.data.network.ApiService
 import okhttp3.MediaType.Companion.toMediaType
@@ -40,40 +41,15 @@ class MainRepository @Inject constructor(
                 val rolFinal: String = try {
                     val perfilResponse = api.getPerfil()
                     if (perfilResponse.isSuccessful) {
-                        val perfilBody = perfilResponse.body()
-                        // TEMP DEBUG — quitar tras diagnosticar el bug de rol empresa/cliente
-                        android.util.Log.d(
-                            "LOGIN_ROL",
-                            "GET /perfil/ 200 OK -> rol(id)=${perfilBody?.rol} rol_nombre='${perfilBody?.rol_nombre}' bodyCompleto=$perfilBody"
-                        )
-                        val rolNombreCrudo = perfilBody?.rol_nombre
-                        if (rolNombreCrudo.isNullOrBlank()) {
-                            android.util.Log.w(
-                                "LOGIN_ROL",
-                                "rol_nombre vino null/vacío en la respuesta de /perfil/ -> cayendo a 'cliente' por defecto"
-                            )
-                            "cliente"
-                        } else {
-                            rolNombreCrudo.lowercase().trim()
-                        }
+                        perfilResponse.body()?.rol_nombre?.lowercase()?.trim()?.takeIf { it.isNotBlank() } ?: "cliente"
                     } else {
-                        android.util.Log.w(
-                            "LOGIN_ROL",
-                            "GET /perfil/ HTTP ${perfilResponse.code()} errorBody=${perfilResponse.errorBody()?.string()}"
-                        )
                         "cliente"
                     }
                 } catch (e: Exception) {
-                    android.util.Log.e("LOGIN_ROL", "GET /perfil/ excepción: ${e.message}")
                     "cliente"
                 }
 
                 tokenManager.saveRolNombre(rolFinal)
-                // TEMP DEBUG — confirma qué quedó realmente persistido en TokenManager
-                android.util.Log.d(
-                    "LOGIN_ROL",
-                    "Rol guardado: '$rolFinal' | TokenManager.getRolNombre() tras guardar = '${tokenManager.getRolNombre()}'"
-                )
 
                 if (rolFinal == "empresa") {
                     tokenManager.savePendingMessage("Modo empresa aún no disponible en la app")
@@ -356,6 +332,24 @@ class MainRepository @Inject constructor(
             val response = api.crearCalificacion(request)
             if (response.isSuccessful) {
                 Result.success(Unit)
+            } else {
+                Result.failure(Exception("Error ${response.code()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(Exception("Error de conexión"))
+        }
+    }
+
+    // ==========================
+    // 📊 DASHBOARD EMPRESA
+    // ==========================
+
+    suspend fun getDashboardEmpresa(): Result<DashboardEmpresaResponse> {
+        return try {
+            val response = api.dashboardEmpresa()
+            if (response.isSuccessful) {
+                response.body()?.let { Result.success(it) }
+                    ?: Result.failure(Exception("El backend respondió vacío"))
             } else {
                 Result.failure(Exception("Error ${response.code()}"))
             }
