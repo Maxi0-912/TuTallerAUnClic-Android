@@ -40,9 +40,27 @@ class MainRepository @Inject constructor(
                 val rolFinal: String = try {
                     val perfilResponse = api.getPerfil()
                     if (perfilResponse.isSuccessful) {
-                        perfilResponse.body()?.rol_nombre?.lowercase()?.trim() ?: "cliente"
+                        val perfilBody = perfilResponse.body()
+                        // TEMP DEBUG — quitar tras diagnosticar el bug de rol empresa/cliente
+                        android.util.Log.d(
+                            "LOGIN_ROL",
+                            "GET /perfil/ 200 OK -> rol(id)=${perfilBody?.rol} rol_nombre='${perfilBody?.rol_nombre}' bodyCompleto=$perfilBody"
+                        )
+                        val rolNombreCrudo = perfilBody?.rol_nombre
+                        if (rolNombreCrudo.isNullOrBlank()) {
+                            android.util.Log.w(
+                                "LOGIN_ROL",
+                                "rol_nombre vino null/vacío en la respuesta de /perfil/ -> cayendo a 'cliente' por defecto"
+                            )
+                            "cliente"
+                        } else {
+                            rolNombreCrudo.lowercase().trim()
+                        }
                     } else {
-                        android.util.Log.w("LOGIN_ROL", "GET /perfil/ HTTP ${perfilResponse.code()}")
+                        android.util.Log.w(
+                            "LOGIN_ROL",
+                            "GET /perfil/ HTTP ${perfilResponse.code()} errorBody=${perfilResponse.errorBody()?.string()}"
+                        )
                         "cliente"
                     }
                 } catch (e: Exception) {
@@ -51,7 +69,11 @@ class MainRepository @Inject constructor(
                 }
 
                 tokenManager.saveRolNombre(rolFinal)
-                android.util.Log.d("LOGIN_ROL", "Rol guardado: '$rolFinal'")
+                // TEMP DEBUG — confirma qué quedó realmente persistido en TokenManager
+                android.util.Log.d(
+                    "LOGIN_ROL",
+                    "Rol guardado: '$rolFinal' | TokenManager.getRolNombre() tras guardar = '${tokenManager.getRolNombre()}'"
+                )
 
                 if (rolFinal == "empresa") {
                     tokenManager.savePendingMessage("Modo empresa aún no disponible en la app")

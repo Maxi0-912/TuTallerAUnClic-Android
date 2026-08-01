@@ -7,6 +7,7 @@ import retrofit2.http.*
 import com.manuel.tutalleraunclic.data.model.response.CitaResponse
 import com.manuel.tutalleraunclic.data.model.response.LoginResponse
 import com.manuel.tutalleraunclic.data.model.response.CupoAnunciosResponse
+import com.manuel.tutalleraunclic.data.model.response.CitaEmpresaResponse
 
 interface ApiService {
 
@@ -132,6 +133,25 @@ interface ApiService {
     suspend fun getCita(
         @Path("id") id: Int
     ): Response<CitaResponse>
+
+    // ==========================
+    // CITAS EMPRESA
+    // ==========================
+
+    @GET("empresa/citas/")
+    suspend fun getCitasEmpresa(): Response<List<CitaEmpresaResponse>>
+
+    @PATCH("citas/{id}/estado/")
+    suspend fun cambiarEstadoCita(
+        @Path("id") id: Int,
+        @Body request: EstadoRequest
+    ): Response<CitaEmpresaResponse>
+
+    @PATCH("citas/{id}/comentario/")
+    suspend fun comentarCita(
+        @Path("id") id: Int,
+        @Body request: ComentarioEmpresaRequest
+    ): Response<CitaEmpresaResponse>
 
     // ==========================
     // CALIFICACIONES

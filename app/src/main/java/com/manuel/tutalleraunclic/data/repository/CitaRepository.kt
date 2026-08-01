@@ -2,7 +2,10 @@ package com.manuel.tutalleraunclic.data.repository
 
 import com.manuel.tutalleraunclic.data.model.entity.Servicio
 import com.manuel.tutalleraunclic.data.model.request.ActualizarCitaRequest
+import com.manuel.tutalleraunclic.data.model.request.ComentarioEmpresaRequest
 import com.manuel.tutalleraunclic.data.model.request.CrearCitaRequest
+import com.manuel.tutalleraunclic.data.model.request.EstadoRequest
+import com.manuel.tutalleraunclic.data.model.response.CitaEmpresaResponse
 import com.manuel.tutalleraunclic.data.model.response.CitaResponse
 import com.manuel.tutalleraunclic.data.network.ApiService
 import retrofit2.Response
@@ -59,4 +62,15 @@ class CitaRepository @Inject constructor(
 
     suspend fun getServicios(establecimientoId: Int): Result<List<Servicio>> =
         safeApiCall { api.getServicios(establecimientoId) }
+
+    // ── Citas empresa ─────────────────────────────────────────────────────────
+
+    suspend fun getCitasEmpresa(): Result<List<CitaEmpresaResponse>> =
+        safeApiCall { api.getCitasEmpresa() }
+
+    suspend fun cambiarEstadoCita(id: Int, estado: String): Result<CitaEmpresaResponse> =
+        safeApiCall { api.cambiarEstadoCita(id, EstadoRequest(estado)) }
+
+    suspend fun comentarCita(id: Int, comentario: String): Result<CitaEmpresaResponse> =
+        safeApiCall { api.comentarCita(id, ComentarioEmpresaRequest(comentario)) }
 }

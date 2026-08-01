@@ -31,6 +31,7 @@ object Routes {
     const val EDITAR_PERFIL = "editar_perfil"
 
     const val NOTIFICACIONES = "notificaciones"
+    const val EMPRESA_ALERTAS = "empresa_alertas"
 
     const val EMPRESA_HOME            = "empresa_home"
     const val EMPRESA_DASHBOARD       = "empresa_dashboard"

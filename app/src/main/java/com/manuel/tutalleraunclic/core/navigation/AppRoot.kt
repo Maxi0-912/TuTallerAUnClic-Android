@@ -35,6 +35,7 @@ import com.manuel.tutalleraunclic.ui.screens.perfil.PerfilScreen
 import com.manuel.tutalleraunclic.ui.screens.perfil.EditarPerfilScreen
 import com.manuel.tutalleraunclic.ui.screens.mapa.MapScreen
 import com.manuel.tutalleraunclic.ui.screens.notificaciones.NotificacionesScreen
+import com.manuel.tutalleraunclic.ui.screens.notificaciones.NotificacionesEmpresaScreen
 import com.manuel.tutalleraunclic.ui.screens.resena.ResenaScreen
 import com.manuel.tutalleraunclic.ui.screens.anuncios.MisAnunciosScreen
 import com.manuel.tutalleraunclic.ui.screens.anuncios.AnuncioFormScreen
@@ -251,9 +252,7 @@ fun AppRoot(
             }
 
             composable(Routes.EMPRESA_CITAS) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("Citas de empresa - Próximamente", style = MaterialTheme.typography.titleMedium)
-                }
+                CitasEmpresaScreen()
             }
 
             composable(Routes.EMPRESA_ESTABLECIMIENTO) {
@@ -302,6 +301,11 @@ fun AppRoot(
                     viewModel = notifViewModel,
                     onBack    = { navController.popBackStack() }
                 )
+            }
+
+            // 🔔 ALERTAS (empresa)
+            composable(Routes.EMPRESA_ALERTAS) {
+                NotificacionesEmpresaScreen(viewModel = notifViewModel)
             }
 
             // 👤 PERFIL

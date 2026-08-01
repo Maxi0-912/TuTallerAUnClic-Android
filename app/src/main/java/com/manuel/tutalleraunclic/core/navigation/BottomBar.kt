@@ -57,9 +57,9 @@ fun BottomBar(
             )
 
             NavigationBarItem(
-                selected = currentRoute == Routes.NOTIFICACIONES,
+                selected = currentRoute == Routes.EMPRESA_ALERTAS,
                 onClick = {
-                    navController.navigate(Routes.NOTIFICACIONES) {
+                    navController.navigate(Routes.EMPRESA_ALERTAS) {
                         popUpTo(navController.graph.startDestinationId)
                         launchSingleTop = true
                     }
