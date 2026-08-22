@@ -1,5 +1,8 @@
 package com.manuel.tutalleraunclic.ui.screens.establecimientos
 
+import android.Manifest
+import android.annotation.SuppressLint
+import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -14,7 +17,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Image
-import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -22,18 +25,39 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
+import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.model.CameraPosition
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.tasks.CancellationTokenSource
+import com.google.maps.android.compose.GoogleMap
+import com.google.maps.android.compose.MapUiSettings
+import com.google.maps.android.compose.Marker
+import com.google.maps.android.compose.MarkerState
+import com.google.maps.android.compose.rememberCameraPositionState
 import com.manuel.tutalleraunclic.R
 import com.manuel.tutalleraunclic.utils.fixImageUrl
 import com.manuel.tutalleraunclic.viewmodel.EstablecimientoFormViewModel
 import com.manuel.tutalleraunclic.viewmodel.UiEvent
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 
+/** Ubicación por defecto cuando el establecimiento aún no tiene coordenadas (Popayán, Colombia). */
+private val UBICACION_POR_DEFECTO = LatLng(2.44222, -76.61258)
+
+@SuppressLint("MissingPermission")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EstablecimientoFormScreen(
@@ -45,7 +69,7 @@ fun EstablecimientoFormScreen(
     val state by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
-    var mostrarMapPicker by remember { mutableStateOf(false) }
+    val context = LocalContext.current
 
     LaunchedEffect(Unit) { viewModel.inicializar(establecimientoId) }
 
@@ -66,6 +90,54 @@ fun EstablecimientoFormScreen(
     val launcher = rememberLauncherForActivityResult(
         ActivityResultContracts.GetContent()
     ) { uri -> viewModel.setFotoUri(uri) }
+
+    // ── Mapa embebido ────────────────────────────────────────────────────
+    val cameraPositionState = rememberCameraPositionState()
+    var isLocating by remember { mutableStateOf(false) }
+
+    // Centra la cámara una sola vez, cuando terminan de cargarse los datos
+    // (edición) o al entrar en modo creación, sin pelear con los taps del usuario.
+    LaunchedEffect(state.isLoading) {
+        if (!state.isLoading) {
+            val lat = state.latitud.toDoubleOrNull()
+            val lng = state.longitud.toDoubleOrNull()
+            val inicial = if (lat != null && lng != null && lat != 0.0 && lng != 0.0) {
+                LatLng(lat, lng)
+            } else {
+                UBICACION_POR_DEFECTO
+            }
+            cameraPositionState.position = CameraPosition.fromLatLngZoom(inicial, 14f)
+        }
+    }
+
+    fun moverAMiUbicacion() {
+        isLocating = true
+        scope.launch {
+            try {
+                val cancelToken = CancellationTokenSource()
+                val fusedClient = LocationServices.getFusedLocationProviderClient(context)
+                val location = suspendCancellableCoroutine<android.location.Location?> { cont ->
+                    fusedClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, cancelToken.token)
+                        .addOnSuccessListener { cont.resume(it) }
+                        .addOnFailureListener { cont.resumeWithException(it) }
+                    cont.invokeOnCancellation { cancelToken.cancel() }
+                }
+                if (location != null) {
+                    val actual = LatLng(location.latitude, location.longitude)
+                    viewModel.setLatitud(actual.latitude.toString())
+                    viewModel.setLongitud(actual.longitude.toString())
+                    cameraPositionState.animate(CameraUpdateFactory.newLatLngZoom(actual, 15f))
+                }
+            } catch (_: Exception) {
+            } finally {
+                isLocating = false
+            }
+        }
+    }
+
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted -> if (granted) moverAMiUbicacion() }
 
     Scaffold(
         topBar = {
@@ -212,13 +284,83 @@ fun EstablecimientoFormScreen(
                 )
             }
 
-            OutlinedButton(
-                onClick = { mostrarMapPicker = true },
-                modifier = Modifier.fillMaxWidth()
+            // ── Ubicación (mapa embebido) ───────────────────────────────────
+            val establecimientoLatLng = remember(state.latitud, state.longitud) {
+                val lat = state.latitud.toDoubleOrNull()
+                val lng = state.longitud.toDoubleOrNull()
+                if (lat != null && lng != null && lat != 0.0 && lng != 0.0) LatLng(lat, lng) else UBICACION_POR_DEFECTO
+            }
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
             ) {
-                Icon(Icons.Default.LocationOn, contentDescription = null)
-                Spacer(Modifier.width(8.dp))
-                Text("Seleccionar ubicación en el mapa")
+                Column {
+                    Text(
+                        "Ubicación del establecimiento",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(12.dp)
+                    )
+
+                    GoogleMap(
+                        modifier = Modifier.fillMaxWidth().height(300.dp),
+                        cameraPositionState = cameraPositionState,
+                        uiSettings = MapUiSettings(zoomControlsEnabled = true, mapToolbarEnabled = false),
+                        onMapClick = { latLng ->
+                            viewModel.setLatitud(latLng.latitude.toString())
+                            viewModel.setLongitud(latLng.longitude.toString())
+                        }
+                    ) {
+                        Marker(
+                            state = MarkerState(position = establecimientoLatLng),
+                            title = "Ubicación: ${state.nombre.ifBlank { "Establecimiento" }}",
+                            snippet = "Lat: ${"%.4f".format(establecimientoLatLng.latitude)}, " +
+                                "Lng: ${"%.4f".format(establecimientoLatLng.longitude)}"
+                        )
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Button(
+                            onClick = {
+                                val granted = ContextCompat.checkSelfPermission(
+                                    context, Manifest.permission.ACCESS_FINE_LOCATION
+                                ) == PackageManager.PERMISSION_GRANTED
+                                if (granted) {
+                                    moverAMiUbicacion()
+                                } else {
+                                    locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                                }
+                            },
+                            modifier = Modifier.height(40.dp)
+                        ) {
+                            if (isLocating) {
+                                CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp, color = Color.White)
+                            } else {
+                                Icon(Icons.Default.MyLocation, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
+                            }
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Mi ubicación", fontSize = 12.sp)
+                        }
+
+                        Column {
+                            Text("Lat: ${"%.4f".format(establecimientoLatLng.latitude)}", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            Text("Lng: ${"%.4f".format(establecimientoLatLng.longitude)}", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+
+                    Text(
+                        "💡 Toca el mapa para marcar la ubicación o usa \"Mi ubicación\"",
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                    )
+                }
             }
 
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -252,18 +394,5 @@ fun EstablecimientoFormScreen(
                 }
             }
         }
-    }
-
-    if (mostrarMapPicker) {
-        MapPickerScreen(
-            initialLat = state.latitud.toDoubleOrNull(),
-            initialLng = state.longitud.toDoubleOrNull(),
-            onDismiss = { mostrarMapPicker = false },
-            onConfirm = { lat, lng ->
-                viewModel.setLatitud(lat.toString())
-                viewModel.setLongitud(lng.toString())
-                mostrarMapPicker = false
-            }
-        )
     }
 }
