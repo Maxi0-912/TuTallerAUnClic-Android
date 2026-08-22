@@ -71,6 +71,14 @@ import java.util.Locale
 /** Ubicación por defecto cuando el establecimiento aún no tiene coordenadas (Popayán, Colombia). */
 private val UBICACION_POR_DEFECTO = LatLng(2.44222, -76.61258)
 
+/**
+ * El backend rechaza coordenadas con más de 6 decimales. Se formatea directamente
+ * a String (en vez de redondear el Double y luego convertirlo) para no arrastrar
+ * artefactos de precisión binaria, y con Locale.US para asegurar el punto decimal
+ * sin importar el idioma del dispositivo.
+ */
+private fun formatCoord(value: Double): String = String.format(Locale.US, "%.6f", value)
+
 @SuppressLint("MissingPermission")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -130,6 +138,11 @@ fun EstablecimientoFormScreen(
         }
     }
 
+    fun actualizarUbicacion(lat: Double, lng: Double) {
+        viewModel.setLatitud(formatCoord(lat))
+        viewModel.setLongitud(formatCoord(lng))
+    }
+
     fun reverseGeocode(lat: Double, lng: Double) {
         scope.launch {
             try {
@@ -162,8 +175,7 @@ fun EstablecimientoFormScreen(
                 }
                 if (location != null) {
                     val actual = LatLng(location.latitude, location.longitude)
-                    viewModel.setLatitud(actual.latitude.toString())
-                    viewModel.setLongitud(actual.longitude.toString())
+                    actualizarUbicacion(actual.latitude, actual.longitude)
                     cameraPositionState.animate(CameraUpdateFactory.newLatLngZoom(actual, 15f))
                     reverseGeocode(actual.latitude, actual.longitude)
                 }
@@ -187,8 +199,7 @@ fun EstablecimientoFormScreen(
                 val encontrada = resultados?.firstOrNull()
                 if (encontrada != null) {
                     val latLng = LatLng(encontrada.latitude, encontrada.longitude)
-                    viewModel.setLatitud(latLng.latitude.toString())
-                    viewModel.setLongitud(latLng.longitude.toString())
+                    actualizarUbicacion(latLng.latitude, latLng.longitude)
                     locationName = encontrada.getAddressLine(0) ?: searchQuery
                     viewModel.setDireccion(locationName)
                     cameraPositionState.animate(CameraUpdateFactory.newLatLngZoom(latLng, 16f))
@@ -441,8 +452,7 @@ fun EstablecimientoFormScreen(
                         cameraPositionState = cameraPositionState,
                         uiSettings = MapUiSettings(zoomControlsEnabled = true, mapToolbarEnabled = false),
                         onMapClick = { latLng ->
-                            viewModel.setLatitud(latLng.latitude.toString())
-                            viewModel.setLongitud(latLng.longitude.toString())
+                            actualizarUbicacion(latLng.latitude, latLng.longitude)
                             reverseGeocode(latLng.latitude, latLng.longitude)
                         }
                     ) {
