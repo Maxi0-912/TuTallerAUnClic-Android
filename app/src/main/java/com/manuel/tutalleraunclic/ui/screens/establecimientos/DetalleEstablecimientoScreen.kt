@@ -2,8 +2,10 @@ package com.manuel.tutalleraunclic.ui.screens.establecimientos
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Location
+import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -447,6 +449,7 @@ private fun UbicacionSection(
     onComoLlegar: () -> Unit
 ) {
     val latLng = remember(lat, lng) { LatLng(lat, lng) }
+    val context = LocalContext.current
 
     Column(modifier = Modifier.fillMaxWidth()) {
         SeccionTitulo(titulo = "Ubicación", icono = Icons.Default.LocationOn)
@@ -528,6 +531,16 @@ private fun UbicacionSection(
                 Spacer(Modifier.width(8.dp))
                 Text("Cómo llegar", fontWeight = FontWeight.Bold, color = Color.White)
             }
+        }
+
+        TextButton(
+            onClick = {
+                val mapsUrl = "https://www.google.com/maps/search/?api=1&query=$lat,$lng"
+                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(mapsUrl)))
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Abrir en Google Maps", color = Azul)
         }
 
         Spacer(Modifier.height(8.dp))

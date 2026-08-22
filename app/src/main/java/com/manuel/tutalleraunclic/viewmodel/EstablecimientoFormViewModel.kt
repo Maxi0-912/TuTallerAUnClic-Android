@@ -110,12 +110,22 @@ class EstablecimientoFormViewModel @Inject constructor(
             viewModelScope.launch { _uiEvent.emit(UiEvent.ShowError("El nombre es obligatorio")) }
             return
         }
+        if (state.nombre.trim().length < 3) {
+            viewModelScope.launch { _uiEvent.emit(UiEvent.ShowError("El nombre debe tener al menos 3 caracteres")) }
+            return
+        }
         if (state.tipoId == null) {
             viewModelScope.launch { _uiEvent.emit(UiEvent.ShowError("Selecciona un tipo")) }
             return
         }
         if (state.latitud.isBlank() || state.longitud.isBlank()) {
             viewModelScope.launch { _uiEvent.emit(UiEvent.ShowError("La ubicación (latitud y longitud) es obligatoria")) }
+            return
+        }
+        val lat = state.latitud.toDoubleOrNull()
+        val lng = state.longitud.toDoubleOrNull()
+        if (lat == null || lng == null || lat < -90.0 || lat > 90.0 || lng < -180.0 || lng > 180.0) {
+            viewModelScope.launch { _uiEvent.emit(UiEvent.ShowError("La ubicación no es válida, selecciónala nuevamente en el mapa")) }
             return
         }
 

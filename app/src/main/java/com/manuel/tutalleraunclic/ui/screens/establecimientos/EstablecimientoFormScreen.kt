@@ -14,6 +14,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -44,6 +45,7 @@ fun EstablecimientoFormScreen(
     val state by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    var mostrarMapPicker by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) { viewModel.inicializar(establecimientoId) }
 
@@ -210,6 +212,15 @@ fun EstablecimientoFormScreen(
                 )
             }
 
+            OutlinedButton(
+                onClick = { mostrarMapPicker = true },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(Icons.Default.LocationOn, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+                Text("Seleccionar ubicación en el mapa")
+            }
+
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
                     value = state.latitud,
@@ -241,5 +252,18 @@ fun EstablecimientoFormScreen(
                 }
             }
         }
+    }
+
+    if (mostrarMapPicker) {
+        MapPickerScreen(
+            initialLat = state.latitud.toDoubleOrNull(),
+            initialLng = state.longitud.toDoubleOrNull(),
+            onDismiss = { mostrarMapPicker = false },
+            onConfirm = { lat, lng ->
+                viewModel.setLatitud(lat.toString())
+                viewModel.setLongitud(lng.toString())
+                mostrarMapPicker = false
+            }
+        )
     }
 }
