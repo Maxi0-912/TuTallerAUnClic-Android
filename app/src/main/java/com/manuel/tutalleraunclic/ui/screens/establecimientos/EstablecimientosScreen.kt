@@ -140,7 +140,10 @@ fun EstablecimientosScreen(navController: NavController) {
                             state = pagerState,
                             modifier = Modifier.fillMaxWidth()
                         ) { page ->
-                            BannerCard(banner = banners[page])
+                            BannerCard(
+                                banner = banners[page],
+                                onClick = { navController.navigate(Routes.detalle(banners[page].establecimiento.toString())) }
+                            )
                         }
                         Spacer(Modifier.height(8.dp))
                         Row(
@@ -244,12 +247,13 @@ fun EstablecimientosScreen(navController: NavController) {
 // ─── Composables privados ─────────────────────────────────────────────────────
 
 @Composable
-private fun BannerCard(banner: Anuncio) {
+private fun BannerCard(banner: Anuncio, onClick: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .height(200.dp)
             .clip(RoundedCornerShape(20.dp))
+            .clickable(onClick = onClick)
     ) {
         AsyncImage(
             model = fixImageUrl(banner.imagen_url),
