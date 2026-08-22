@@ -55,6 +55,7 @@ import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.Polyline
 import com.google.maps.android.compose.rememberCameraPositionState
 import com.manuel.tutalleraunclic.core.navigation.Routes
+import com.manuel.tutalleraunclic.data.model.entity.Anuncio
 import com.manuel.tutalleraunclic.data.model.entity.Calificacion
 import com.manuel.tutalleraunclic.data.model.entity.Establecimiento
 import com.manuel.tutalleraunclic.data.model.entity.Servicio
@@ -235,10 +236,12 @@ fun DetalleEstablecimientoScreen(
                 }
             }
 
-            // 5 ── PROMOCIONES ────────────────────────────────────────────────
+            // 5 ── OFERTAS (anuncios reales del establecimiento) ────────────────
             item {
-                SeccionTitulo(titulo = "Ofertas especiales", icono = Icons.Default.Star)
-                PromocionesSection()
+                if (state.anuncios.isNotEmpty()) {
+                    SeccionTitulo(titulo = "Ofertas especiales", icono = Icons.Default.Star)
+                    OfertasSection(anuncios = state.anuncios)
+                }
             }
 
             // 6 ── RESEÑAS ────────────────────────────────────────────────────
@@ -552,24 +555,16 @@ private fun UbicacionSection(
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// 5. PROMOCIONES (datos de ejemplo visuales)
+// 5. OFERTAS (anuncios reales del establecimiento, ya aprobados)
 // ═══════════════════════════════════════════════════════════════════════════════
 
-private data class Promo(val titulo: String, val subtitulo: String, val descuento: String)
-
-private val PROMOS_EJEMPLO = listOf(
-    Promo("Cambio de aceite",   "Incluye revisión general",     "20% OFF"),
-    Promo("Lavado completo",    "Interior + exterior + aroma",  "15% OFF"),
-    Promo("Revisión de frenos", "Diagnóstico sin costo",        "GRATIS"),
-)
-
 @Composable
-private fun PromocionesSection() {
+private fun OfertasSection(anuncios: List<Anuncio>) {
     LazyRow(
         contentPadding        = PaddingValues(horizontal = 20.dp, vertical = 4.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        items(PROMOS_EJEMPLO) { promo -> PromoCard(promo) }
+        items(anuncios, key = { it.id }) { anuncio -> OfertaCard(anuncio) }
     }
     Spacer(Modifier.height(8.dp))
     HorizontalDivider(
@@ -579,18 +574,36 @@ private fun PromocionesSection() {
 }
 
 @Composable
-private fun PromoCard(promo: Promo) {
+private fun OfertaCard(anuncio: Anuncio) {
     Box(
         modifier = Modifier
             .width(200.dp)
             .height(110.dp)
             .clip(RoundedCornerShape(16.dp))
-            .background(Brush.linearGradient(listOf(Azul, Morado)))
-            .padding(16.dp)
     ) {
-        Column(verticalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxSize()) {
+        val imagenUrl = fixImageUrl(anuncio.imagen_url)
+        if (imagenUrl != null) {
+            AsyncImage(
+                model = imagenUrl,
+                contentDescription = anuncio.titulo,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.65f))))
+            )
+        } else {
+            Box(modifier = Modifier.fillMaxSize().background(Brush.linearGradient(listOf(Azul, Morado))))
+        }
+
+        Column(
+            modifier = Modifier.fillMaxSize().padding(16.dp),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
             Text(
-                text     = promo.titulo,
+                text     = anuncio.titulo,
                 style    = MaterialTheme.typography.titleSmall.copy(
                     fontWeight = FontWeight.Bold,
                     color      = Color.White
@@ -598,23 +611,28 @@ private fun PromoCard(promo: Promo) {
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
-            Text(
-                text     = promo.subtitulo,
-                style    = MaterialTheme.typography.labelSmall.copy(color = Color.White.copy(alpha = 0.8f)),
-                maxLines = 2
-            )
-            Surface(
-                shape = RoundedCornerShape(8.dp),
-                color = Color.White.copy(alpha = 0.2f)
-            ) {
+            if (!anuncio.descripcion.isNullOrBlank()) {
                 Text(
-                    text     = promo.descuento,
-                    style    = MaterialTheme.typography.labelMedium.copy(
-                        fontWeight = FontWeight.ExtraBold,
-                        color      = Color.White
-                    ),
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                    text     = anuncio.descripcion,
+                    style    = MaterialTheme.typography.labelSmall.copy(color = Color.White.copy(alpha = 0.85f)),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
                 )
+            }
+            if (!anuncio.descuento.isNullOrBlank()) {
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = Color.White.copy(alpha = 0.2f)
+                ) {
+                    Text(
+                        text     = anuncio.descuento,
+                        style    = MaterialTheme.typography.labelMedium.copy(
+                            fontWeight = FontWeight.ExtraBold,
+                            color      = Color.White
+                        ),
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                    )
+                }
             }
         }
     }

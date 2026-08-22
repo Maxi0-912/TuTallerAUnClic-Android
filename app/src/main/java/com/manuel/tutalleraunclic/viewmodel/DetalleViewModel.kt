@@ -3,6 +3,7 @@ package com.manuel.tutalleraunclic.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.android.gms.maps.model.LatLng
+import com.manuel.tutalleraunclic.data.repository.AnuncioRepository
 import com.manuel.tutalleraunclic.data.repository.MainRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -17,7 +18,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class DetalleViewModel @Inject constructor(
-    private val repository: MainRepository
+    private val repository: MainRepository,
+    private val anuncioRepository: AnuncioRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DetalleUiState())
@@ -39,10 +41,13 @@ class DetalleViewModel @Inject constructor(
             val detalleJob   = async { repository.getDetalleEstablecimiento(id) }
             val serviciosJob = async { runCatching { repository.getServicios(id) } }
             val resenasJob   = async { repository.getResenasEstablecimiento(id) }
+            val anunciosJob  = async { anuncioRepository.getAnunciosPublicos(categoria = "oferta") }
 
             val detalleResult   = detalleJob.await()
             val serviciosResult = serviciosJob.await()
             val resenasResult   = resenasJob.await()
+            val anuncios = anunciosJob.await().getOrDefault(emptyList())
+                .filter { it.establecimiento == id && it.estado?.lowercase() == "aprobado" }
 
             _uiState.update {
                 it.copy(
@@ -50,6 +55,7 @@ class DetalleViewModel @Inject constructor(
                     establecimiento = detalleResult.getOrNull(),
                     servicios       = serviciosResult.getOrElse { emptyList() },
                     resenas         = resenasResult.getOrElse { emptyList() },
+                    anuncios        = anuncios,
                     error           = detalleResult.exceptionOrNull()?.message
                 )
             }
