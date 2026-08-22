@@ -103,29 +103,39 @@ class EstablecimientoFormViewModel @Inject constructor(
     fun setTipoId(id: Int) = _uiState.update { it.copy(tipoId = id) }
     fun setFotoUri(uri: Uri?) = _uiState.update { it.copy(fotoUri = uri) }
 
-    fun guardar() {
+    /** Valida el formulario y devuelve todos los errores encontrados (lista vacía si es válido). */
+    fun validar(): List<String> {
         val state = _uiState.value
+        val errores = mutableListOf<String>()
 
         if (state.nombre.isBlank()) {
-            viewModelScope.launch { _uiEvent.emit(UiEvent.ShowError("El nombre es obligatorio")) }
-            return
+            errores.add("El nombre es obligatorio")
+        } else if (state.nombre.trim().length < 3) {
+            errores.add("El nombre debe tener al menos 3 caracteres")
         }
-        if (state.nombre.trim().length < 3) {
-            viewModelScope.launch { _uiEvent.emit(UiEvent.ShowError("El nombre debe tener al menos 3 caracteres")) }
-            return
-        }
+
         if (state.tipoId == null) {
-            viewModelScope.launch { _uiEvent.emit(UiEvent.ShowError("Selecciona un tipo")) }
-            return
+            errores.add("Selecciona un tipo de establecimiento")
         }
+
         if (state.latitud.isBlank() || state.longitud.isBlank()) {
-            viewModelScope.launch { _uiEvent.emit(UiEvent.ShowError("La ubicación (latitud y longitud) es obligatoria")) }
-            return
+            errores.add("Debes seleccionar una ubicación en el mapa")
+        } else {
+            val lat = state.latitud.toDoubleOrNull()
+            val lng = state.longitud.toDoubleOrNull()
+            if (lat == null || lng == null || lat < -90.0 || lat > 90.0 || lng < -180.0 || lng > 180.0) {
+                errores.add("La ubicación no es válida, selecciónala nuevamente en el mapa")
+            }
         }
-        val lat = state.latitud.toDoubleOrNull()
-        val lng = state.longitud.toDoubleOrNull()
-        if (lat == null || lng == null || lat < -90.0 || lat > 90.0 || lng < -180.0 || lng > 180.0) {
-            viewModelScope.launch { _uiEvent.emit(UiEvent.ShowError("La ubicación no es válida, selecciónala nuevamente en el mapa")) }
+
+        return errores
+    }
+
+    fun guardar() {
+        val state = _uiState.value
+        val errores = validar()
+        if (errores.isNotEmpty()) {
+            viewModelScope.launch { _uiEvent.emit(UiEvent.ShowError(errores.first())) }
             return
         }
 
@@ -145,7 +155,7 @@ class EstablecimientoFormViewModel @Inject constructor(
                     horaCierre = state.horaCierre.ifBlank { null },
                     latitud = state.latitud,
                     longitud = state.longitud,
-                    tipoId = state.tipoId,
+                    tipoId = state.tipoId!!,
                     foto = fotoPart
                 )
             } else {
@@ -158,7 +168,7 @@ class EstablecimientoFormViewModel @Inject constructor(
                     horaCierre = state.horaCierre.ifBlank { null },
                     latitud = state.latitud,
                     longitud = state.longitud,
-                    tipoId = state.tipoId,
+                    tipoId = state.tipoId!!,
                     foto = fotoPart
                 )
             }

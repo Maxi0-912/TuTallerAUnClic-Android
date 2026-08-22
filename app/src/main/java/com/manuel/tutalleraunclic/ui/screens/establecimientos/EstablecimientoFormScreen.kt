@@ -3,6 +3,7 @@ package com.manuel.tutalleraunclic.ui.screens.establecimientos
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.pm.PackageManager
+import android.location.Geocoder
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -12,12 +13,15 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.MyLocation
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -29,6 +33,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
@@ -49,10 +55,13 @@ import com.manuel.tutalleraunclic.R
 import com.manuel.tutalleraunclic.utils.fixImageUrl
 import com.manuel.tutalleraunclic.viewmodel.EstablecimientoFormViewModel
 import com.manuel.tutalleraunclic.viewmodel.UiEvent
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withContext
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
+import java.util.Locale
 
 /** Ubicación por defecto cuando el establecimiento aún no tiene coordenadas (Popayán, Colombia). */
 private val UBICACION_POR_DEFECTO = LatLng(2.44222, -76.61258)
@@ -70,6 +79,7 @@ fun EstablecimientoFormScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
+    var erroresValidacion by remember { mutableStateOf<List<String>>(emptyList()) }
 
     LaunchedEffect(Unit) { viewModel.inicializar(establecimientoId) }
 
@@ -91,9 +101,14 @@ fun EstablecimientoFormScreen(
         ActivityResultContracts.GetContent()
     ) { uri -> viewModel.setFotoUri(uri) }
 
-    // ── Mapa embebido ────────────────────────────────────────────────────
+    // ── Mapa embebido + búsqueda de dirección ───────────────────────────────
     val cameraPositionState = rememberCameraPositionState()
     var isLocating by remember { mutableStateOf(false) }
+    var isSearching by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
+    // Se inicializa con la dirección ya guardada (modo edición) y se
+    // actualiza cada vez que el usuario elige una ubicación nueva.
+    var locationName by remember { mutableStateOf(state.direccion) }
 
     // Centra la cámara una sola vez, cuando terminan de cargarse los datos
     // (edición) o al entrar en modo creación, sin pelear con los taps del usuario.
@@ -107,6 +122,24 @@ fun EstablecimientoFormScreen(
                 UBICACION_POR_DEFECTO
             }
             cameraPositionState.position = CameraPosition.fromLatLngZoom(inicial, 14f)
+        }
+    }
+
+    fun reverseGeocode(lat: Double, lng: Double) {
+        scope.launch {
+            try {
+                val geocoder = Geocoder(context, Locale.getDefault())
+                val resultados = withContext(Dispatchers.IO) {
+                    @Suppress("DEPRECATION")
+                    geocoder.getFromLocation(lat, lng, 1)
+                }
+                val direccion = resultados?.firstOrNull()?.getAddressLine(0)
+                if (!direccion.isNullOrBlank()) {
+                    locationName = direccion
+                    viewModel.setDireccion(direccion)
+                }
+            } catch (_: Exception) {
+            }
         }
     }
 
@@ -127,10 +160,41 @@ fun EstablecimientoFormScreen(
                     viewModel.setLatitud(actual.latitude.toString())
                     viewModel.setLongitud(actual.longitude.toString())
                     cameraPositionState.animate(CameraUpdateFactory.newLatLngZoom(actual, 15f))
+                    reverseGeocode(actual.latitude, actual.longitude)
                 }
             } catch (_: Exception) {
             } finally {
                 isLocating = false
+            }
+        }
+    }
+
+    fun buscarDireccion() {
+        if (searchQuery.isBlank()) return
+        isSearching = true
+        scope.launch {
+            try {
+                val geocoder = Geocoder(context, Locale.getDefault())
+                val resultados = withContext(Dispatchers.IO) {
+                    @Suppress("DEPRECATION")
+                    geocoder.getFromLocationName(searchQuery, 1)
+                }
+                val encontrada = resultados?.firstOrNull()
+                if (encontrada != null) {
+                    val latLng = LatLng(encontrada.latitude, encontrada.longitude)
+                    viewModel.setLatitud(latLng.latitude.toString())
+                    viewModel.setLongitud(latLng.longitude.toString())
+                    locationName = encontrada.getAddressLine(0) ?: searchQuery
+                    viewModel.setDireccion(locationName)
+                    cameraPositionState.animate(CameraUpdateFactory.newLatLngZoom(latLng, 16f))
+                    scope.launch { snackbarHostState.showSnackbar("Ubicación encontrada") }
+                } else {
+                    scope.launch { snackbarHostState.showSnackbar("Dirección no encontrada") }
+                }
+            } catch (_: Exception) {
+                scope.launch { snackbarHostState.showSnackbar("Error al buscar la dirección") }
+            } finally {
+                isSearching = false
             }
         }
     }
@@ -304,6 +368,39 @@ fun EstablecimientoFormScreen(
                         modifier = Modifier.padding(12.dp)
                     )
 
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        label = { Text("Buscar dirección") },
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp),
+                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                        trailingIcon = {
+                            if (searchQuery.isNotEmpty()) {
+                                IconButton(onClick = { searchQuery = "" }) {
+                                    Icon(Icons.Default.Close, contentDescription = "Limpiar")
+                                }
+                            }
+                        },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                        keyboardActions = KeyboardActions(onSearch = { buscarDireccion() })
+                    )
+
+                    Button(
+                        onClick = { buscarDireccion() },
+                        enabled = !isSearching && searchQuery.isNotBlank(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp, vertical = 8.dp)
+                            .height(40.dp)
+                    ) {
+                        if (isSearching) {
+                            CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp, color = Color.White)
+                        } else {
+                            Text("Buscar en mapa")
+                        }
+                    }
+
                     GoogleMap(
                         modifier = Modifier.fillMaxWidth().height(300.dp),
                         cameraPositionState = cameraPositionState,
@@ -311,13 +408,13 @@ fun EstablecimientoFormScreen(
                         onMapClick = { latLng ->
                             viewModel.setLatitud(latLng.latitude.toString())
                             viewModel.setLongitud(latLng.longitude.toString())
+                            reverseGeocode(latLng.latitude, latLng.longitude)
                         }
                     ) {
                         Marker(
                             state = MarkerState(position = establecimientoLatLng),
-                            title = "Ubicación: ${state.nombre.ifBlank { "Establecimiento" }}",
-                            snippet = "Lat: ${"%.4f".format(establecimientoLatLng.latitude)}, " +
-                                "Lng: ${"%.4f".format(establecimientoLatLng.longitude)}"
+                            title = state.nombre.ifBlank { "Ubicación del establecimiento" },
+                            snippet = locationName.ifBlank { null }
                         )
                     }
 
@@ -326,6 +423,17 @@ fun EstablecimientoFormScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("📍 Ubicación seleccionada", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                            Text(
+                                locationName.ifBlank { "Toca el mapa o busca una dirección" },
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+
                         Button(
                             onClick = {
                                 val granted = ContextCompat.checkSelfPermission(
@@ -342,48 +450,27 @@ fun EstablecimientoFormScreen(
                             if (isLocating) {
                                 CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp, color = Color.White)
                             } else {
-                                Icon(Icons.Default.MyLocation, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
+                                Icon(Icons.Default.MyLocation, contentDescription = "Mi ubicación", tint = Color.White)
                             }
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Mi ubicación", fontSize = 12.sp)
-                        }
-
-                        Column {
-                            Text("Lat: ${"%.4f".format(establecimientoLatLng.latitude)}", fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                            Text("Lng: ${"%.4f".format(establecimientoLatLng.longitude)}", fontSize = 11.sp, fontWeight = FontWeight.Bold)
                         }
                     }
 
                     Text(
-                        "💡 Toca el mapa para marcar la ubicación o usa \"Mi ubicación\"",
-                        fontSize = 11.sp,
+                        "💡 Toca el mapa para marcar la ubicación, busca una dirección o usa tu ubicación actual",
+                        fontSize = 10.sp,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
                     )
                 }
             }
 
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                OutlinedTextField(
-                    value = state.latitud,
-                    onValueChange = viewModel::setLatitud,
-                    label = { Text("Latitud *") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    modifier = Modifier.weight(1f)
-                )
-                OutlinedTextField(
-                    value = state.longitud,
-                    onValueChange = viewModel::setLongitud,
-                    label = { Text("Longitud *") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    modifier = Modifier.weight(1f)
-                )
-            }
-
             Spacer(Modifier.height(8.dp))
 
             Button(
-                onClick = viewModel::guardar,
+                onClick = {
+                    erroresValidacion = viewModel.validar()
+                    if (erroresValidacion.isEmpty()) viewModel.guardar()
+                },
                 enabled = !state.isSaving,
                 modifier = Modifier.fillMaxWidth().height(48.dp)
             ) {
@@ -391,6 +478,24 @@ fun EstablecimientoFormScreen(
                     CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White)
                 } else {
                     Text(if (state.esEdicion) "Guardar cambios" else "Crear establecimiento")
+                }
+            }
+
+            if (erroresValidacion.isNotEmpty()) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFFEBEE))
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Text(
+                            "⚠️ Errores en el formulario:",
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFFC62828)
+                        )
+                        erroresValidacion.forEach { error ->
+                            Text("• $error", color = Color(0xFFC62828), fontSize = 12.sp)
+                        }
+                    }
                 }
             }
         }
