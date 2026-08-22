@@ -138,6 +138,7 @@ class EstablecimientoFormViewModel @Inject constructor(
             viewModelScope.launch { _uiEvent.emit(UiEvent.ShowError(errores.first())) }
             return
         }
+        val tipoId = state.tipoId ?: return
 
         viewModelScope.launch {
             _uiState.update { it.copy(isSaving = true) }
@@ -155,7 +156,7 @@ class EstablecimientoFormViewModel @Inject constructor(
                     horaCierre = state.horaCierre.ifBlank { null },
                     latitud = state.latitud,
                     longitud = state.longitud,
-                    tipoId = state.tipoId!!,
+                    tipoId = tipoId,
                     foto = fotoPart
                 )
             } else {
@@ -168,7 +169,7 @@ class EstablecimientoFormViewModel @Inject constructor(
                     horaCierre = state.horaCierre.ifBlank { null },
                     latitud = state.latitud,
                     longitud = state.longitud,
-                    tipoId = state.tipoId!!,
+                    tipoId = tipoId,
                     foto = fotoPart
                 )
             }
