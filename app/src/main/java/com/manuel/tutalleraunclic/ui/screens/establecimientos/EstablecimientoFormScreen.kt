@@ -17,10 +17,13 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.MyLocation
+import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -37,6 +40,8 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
@@ -281,6 +286,8 @@ fun EstablecimientoFormScreen(
                 value = state.nombre,
                 onValueChange = viewModel::setNombre,
                 label = { Text("Nombre *") },
+                leadingIcon = { Icon(Icons.Default.Business, contentDescription = null) },
+                singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -322,7 +329,9 @@ fun EstablecimientoFormScreen(
                 value = state.telefono,
                 onValueChange = viewModel::setTelefono,
                 label = { Text("Teléfono") },
+                leadingIcon = { Icon(Icons.Default.Phone, contentDescription = null) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
             OutlinedTextField(
@@ -333,18 +342,44 @@ fun EstablecimientoFormScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
+            var showTimePickerApertura by remember { mutableStateOf(false) }
+            var showTimePickerCierre by remember { mutableStateOf(false) }
+
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                OutlinedTextField(
-                    value = state.horaApertura,
-                    onValueChange = viewModel::setHoraApertura,
-                    label = { Text("Hora apertura (HH:mm)") },
+                HoraCard(
+                    label = "Hora apertura",
+                    valor = state.horaApertura,
+                    onClick = { showTimePickerApertura = true },
                     modifier = Modifier.weight(1f)
                 )
-                OutlinedTextField(
-                    value = state.horaCierre,
-                    onValueChange = viewModel::setHoraCierre,
-                    label = { Text("Hora cierre (HH:mm)") },
+                HoraCard(
+                    label = "Hora cierre",
+                    valor = state.horaCierre,
+                    onClick = { showTimePickerCierre = true },
                     modifier = Modifier.weight(1f)
+                )
+            }
+
+            if (showTimePickerApertura) {
+                HoraPickerDialog(
+                    titulo = "Hora de apertura",
+                    horaInicial = state.horaApertura.ifBlank { "08:00" },
+                    onDismiss = { showTimePickerApertura = false },
+                    onConfirmar = { nueva ->
+                        viewModel.setHoraApertura(nueva)
+                        showTimePickerApertura = false
+                    }
+                )
+            }
+            if (showTimePickerCierre) {
+                HoraPickerDialog(
+                    titulo = "Hora de cierre",
+                    horaInicial = state.horaCierre.ifBlank { "18:00" },
+                    onDismiss = { showTimePickerCierre = false },
+                    onConfirmar = { nueva ->
+                        viewModel.setHoraCierre(nueva)
+                        showTimePickerCierre = false
+                    }
                 )
             }
 
@@ -496,6 +531,99 @@ fun EstablecimientoFormScreen(
                             Text("• $error", color = Color(0xFFC62828), fontSize = 12.sp)
                         }
                     }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun HoraCard(
+    label: String,
+    valor: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column {
+                Text(label, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    valor.ifBlank { "--:--" },
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+            Icon(
+                Icons.Default.AccessTime,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(24.dp)
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun HoraPickerDialog(
+    titulo: String,
+    horaInicial: String,
+    onDismiss: () -> Unit,
+    onConfirmar: (String) -> Unit
+) {
+    val timeState = rememberTimePickerState(
+        initialHour = horaInicial.substringBefore(":").toIntOrNull() ?: 8,
+        initialMinute = horaInicial.substringAfter(":", "0").toIntOrNull() ?: 0
+    )
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Surface(
+            modifier = Modifier.width(340.dp).padding(20.dp),
+            shape = RoundedCornerShape(16.dp),
+            color = MaterialTheme.colorScheme.surface,
+            shadowElevation = 8.dp
+        ) {
+            Column(
+                modifier = Modifier.padding(20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    titulo,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 20.dp)
+                )
+
+                TimePicker(state = timeState)
+
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = 20.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.weight(1f).height(45.dp)
+                    ) { Text("Cancelar") }
+
+                    Button(
+                        onClick = { onConfirmar("%02d:%02d".format(timeState.hour, timeState.minute)) },
+                        modifier = Modifier.weight(1f).height(45.dp)
+                    ) { Text("Guardar") }
                 }
             }
         }
