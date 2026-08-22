@@ -12,6 +12,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -23,6 +24,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.manuel.tutalleraunclic.R
@@ -30,6 +32,9 @@ import com.manuel.tutalleraunclic.utils.fixImageUrl
 import com.manuel.tutalleraunclic.viewmodel.AnuncioFormViewModel
 import com.manuel.tutalleraunclic.viewmodel.UiEvent
 import kotlinx.coroutines.launch
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneOffset
 
 private val TIPOS = listOf("imagen" to "Solo imagen", "imagen_texto" to "Imagen con texto", "imagen_boton" to "Imagen con botón")
 private val CATEGORIAS = listOf("banner" to "Banner (inicio)", "oferta" to "Oferta")
@@ -298,18 +303,42 @@ fun AnuncioFormScreen(
                 )
             }
 
+            var showDatePickerInicio by remember { mutableStateOf(false) }
+            var showDatePickerFin by remember { mutableStateOf(false) }
+
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                OutlinedTextField(
-                    value = state.fechaInicio,
-                    onValueChange = viewModel::setFechaInicio,
-                    label = { Text("Inicio (AAAA-MM-DD)") },
+                FechaCard(
+                    label = "Inicio",
+                    valor = state.fechaInicio,
+                    onClick = { showDatePickerInicio = true },
                     modifier = Modifier.weight(1f)
                 )
-                OutlinedTextField(
-                    value = state.fechaFin,
-                    onValueChange = viewModel::setFechaFin,
-                    label = { Text("Fin (AAAA-MM-DD)") },
+                FechaCard(
+                    label = "Fin",
+                    valor = state.fechaFin,
+                    onClick = { showDatePickerFin = true },
                     modifier = Modifier.weight(1f)
+                )
+            }
+
+            if (showDatePickerInicio) {
+                FechaPickerDialog(
+                    fechaInicial = state.fechaInicio.toLocalDateOrNull(),
+                    onDismiss = { showDatePickerInicio = false },
+                    onConfirmar = { fecha ->
+                        viewModel.setFechaInicio(fecha.toString())
+                        showDatePickerInicio = false
+                    }
+                )
+            }
+            if (showDatePickerFin) {
+                FechaPickerDialog(
+                    fechaInicial = state.fechaFin.toLocalDateOrNull(),
+                    onDismiss = { showDatePickerFin = false },
+                    onConfirmar = { fecha ->
+                        viewModel.setFechaFin(fecha.toString())
+                        showDatePickerFin = false
+                    }
                 )
             }
 
@@ -327,5 +356,86 @@ fun AnuncioFormScreen(
                 }
             }
         }
+    }
+}
+
+private fun String.toLocalDateOrNull(): LocalDate? = runCatching { LocalDate.parse(this) }.getOrNull()
+
+@Composable
+private fun FechaCard(
+    label: String,
+    valor: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column {
+                Text(label, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    valor.ifBlank { "Sin definir" },
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+            Icon(
+                Icons.Default.DateRange,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(22.dp)
+            )
+        }
+    }
+}
+
+/**
+ * DatePickerState trabaja en milisegundos UTC (medianoche UTC del día elegido),
+ * no en la zona horaria del dispositivo. Usar ZoneOffset.UTC en ambas direcciones
+ * evita que la fecha se corra un día en zonas horarias detrás de UTC (como Colombia).
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun FechaPickerDialog(
+    fechaInicial: LocalDate?,
+    onDismiss: () -> Unit,
+    onConfirmar: (LocalDate) -> Unit
+) {
+    val datePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = (fechaInicial ?: LocalDate.now())
+            .atStartOfDay(ZoneOffset.UTC)
+            .toInstant()
+            .toEpochMilli()
+    )
+
+    DatePickerDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    val millis = datePickerState.selectedDateMillis
+                    if (millis != null) {
+                        onConfirmar(Instant.ofEpochMilli(millis).atZone(ZoneOffset.UTC).toLocalDate())
+                    } else {
+                        onDismiss()
+                    }
+                }
+            ) { Text("Aceptar") }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancelar") }
+        }
+    ) {
+        DatePicker(state = datePickerState)
     }
 }
