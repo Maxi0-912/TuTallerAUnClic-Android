@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.manuel.tutalleraunclic.R
+import com.manuel.tutalleraunclic.data.model.entity.TipoServicio
 import com.manuel.tutalleraunclic.utils.fixImageUrl
 import com.manuel.tutalleraunclic.viewmodel.AnuncioFormViewModel
 import com.manuel.tutalleraunclic.viewmodel.UiEvent
@@ -319,7 +320,25 @@ fun AnuncioFormScreen(
                             servicioExpanded = false
                         })
                     }
+                    HorizontalDivider()
+                    DropdownMenuItem(
+                        text = { Text("+ Crear nuevo servicio", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) },
+                        onClick = {
+                            servicioExpanded = false
+                            viewModel.abrirDialogoNuevoServicio()
+                        }
+                    )
                 }
+            }
+
+            if (state.mostrarDialogoServicio) {
+                DialogoNuevoServicio(
+                    tiposServicio = state.tiposServicio,
+                    creando = state.creandoServicio,
+                    error = state.errorCrearServicio,
+                    onDismiss = viewModel::cerrarDialogoNuevoServicio,
+                    onGuardar = { nombre, tipoServicioId -> viewModel.crearServicioInline(nombre, tipoServicioId) }
+                )
             }
 
             // ── Ubicaciones (dónde se muestra el anuncio) ───────────────────────
@@ -513,4 +532,84 @@ private fun FechaPickerDialog(
     ) {
         DatePicker(state = datePickerState)
     }
+}
+
+/**
+ * Crear un servicio sin salir del formulario de anuncio. El error de guardado
+ * se muestra dentro del propio diálogo (no un snackbar) para no perderlo al
+ * cerrarse; el diálogo solo se cierra cuando la creación realmente funciona.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun DialogoNuevoServicio(
+    tiposServicio: List<TipoServicio>,
+    creando: Boolean,
+    error: String?,
+    onDismiss: () -> Unit,
+    onGuardar: (nombre: String, tipoServicioId: Int?) -> Unit
+) {
+    var nombre by remember { mutableStateOf("") }
+    var tipoServicioId by remember { mutableStateOf<Int?>(null) }
+    var tipoExpanded by remember { mutableStateOf(false) }
+    val tipoSeleccionado = tiposServicio.firstOrNull { it.id == tipoServicioId }
+
+    AlertDialog(
+        onDismissRequest = { if (!creando) onDismiss() },
+        title = { Text("Nuevo servicio") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(
+                    value = nombre,
+                    onValueChange = { nombre = it },
+                    label = { Text("Nombre *") },
+                    singleLine = true,
+                    enabled = !creando,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                ExposedDropdownMenuBox(
+                    expanded = tipoExpanded,
+                    onExpandedChange = { if (!creando) tipoExpanded = it }
+                ) {
+                    OutlinedTextField(
+                        value = tipoSeleccionado?.nombre ?: "",
+                        onValueChange = {},
+                        readOnly = true,
+                        enabled = !creando,
+                        label = { Text("Tipo de servicio *") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = tipoExpanded) },
+                        modifier = Modifier.fillMaxWidth().menuAnchor()
+                    )
+                    ExposedDropdownMenu(expanded = tipoExpanded, onDismissRequest = { tipoExpanded = false }) {
+                        if (tiposServicio.isEmpty()) {
+                            DropdownMenuItem(text = { Text("No hay tipos disponibles") }, onClick = {})
+                        }
+                        tiposServicio.forEach { tipo ->
+                            DropdownMenuItem(text = { Text(tipo.nombre) }, onClick = {
+                                tipoServicioId = tipo.id
+                                tipoExpanded = false
+                            })
+                        }
+                    }
+                }
+                if (error != null) {
+                    Text(error, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { onGuardar(nombre, tipoServicioId) },
+                enabled = !creando
+            ) {
+                if (creando) {
+                    CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp, color = Color.White)
+                } else {
+                    Text("Guardar")
+                }
+            }
+        },
+        dismissButton = {
+            OutlinedButton(onClick = onDismiss, enabled = !creando) { Text("Cancelar") }
+        }
+    )
 }

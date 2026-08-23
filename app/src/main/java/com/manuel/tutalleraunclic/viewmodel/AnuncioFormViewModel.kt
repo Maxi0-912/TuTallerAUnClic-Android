@@ -6,9 +6,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.manuel.tutalleraunclic.data.model.entity.Establecimiento
 import com.manuel.tutalleraunclic.data.model.entity.Servicio
+import com.manuel.tutalleraunclic.data.model.entity.TipoServicio
 import com.manuel.tutalleraunclic.data.model.response.CupoAnunciosResponse
 import com.manuel.tutalleraunclic.data.repository.AnuncioRepository
 import com.manuel.tutalleraunclic.data.repository.MainRepository
+import com.manuel.tutalleraunclic.data.repository.ServicioEmpresaRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.*
@@ -41,6 +43,12 @@ data class AnuncioFormUiState(
     val servicioId: Int? = null,
     val ubicaciones: List<String> = emptyList(),
 
+    // Crear servicio inline desde el formulario de anuncio
+    val tiposServicio: List<TipoServicio> = emptyList(),
+    val mostrarDialogoServicio: Boolean = false,
+    val creandoServicio: Boolean = false,
+    val errorCrearServicio: String? = null,
+
     val imagenUri: Uri? = null,
     val imagenUrlActual: String? = null,
 
@@ -58,6 +66,7 @@ data class AnuncioFormUiState(
 class AnuncioFormViewModel @Inject constructor(
     private val anuncioRepository: AnuncioRepository,
     private val mainRepository: MainRepository,
+    private val servicioEmpresaRepository: ServicioEmpresaRepository,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
@@ -81,8 +90,9 @@ class AnuncioFormViewModel @Inject constructor(
             val perfil = mainRepository.getPerfil().getOrNull()
             val misEstablecimientos = mainRepository.getEstablecimientos().getOrDefault(emptyList())
                 .filter { it.propietario == perfil?.id }
+            val tiposServicio = servicioEmpresaRepository.getTipos().getOrDefault(emptyList())
 
-            _uiState.update { it.copy(misEstablecimientos = misEstablecimientos) }
+            _uiState.update { it.copy(misEstablecimientos = misEstablecimientos, tiposServicio = tiposServicio) }
 
             if (anuncioId != null) {
                 val anuncio = anuncioRepository.getMisAnuncios().getOrNull()
@@ -160,6 +170,60 @@ class AnuncioFormViewModel @Inject constructor(
     fun toggleUbicacion(valor: String) = _uiState.update {
         val nuevas = if (valor in it.ubicaciones) it.ubicaciones - valor else it.ubicaciones + valor
         it.copy(ubicaciones = nuevas)
+    }
+
+    fun abrirDialogoNuevoServicio() = _uiState.update {
+        it.copy(mostrarDialogoServicio = true, errorCrearServicio = null)
+    }
+
+    fun cerrarDialogoNuevoServicio() = _uiState.update {
+        it.copy(mostrarDialogoServicio = false, errorCrearServicio = null)
+    }
+
+    /** Crea un servicio sin salir del formulario de anuncio y lo deja seleccionado. */
+    fun crearServicioInline(nombre: String, tipoServicioId: Int?) {
+        val establecimientoId = _uiState.value.establecimientoId
+        if (establecimientoId == null) {
+            _uiState.update { it.copy(errorCrearServicio = "Selecciona un establecimiento primero") }
+            return
+        }
+        if (nombre.isBlank()) {
+            _uiState.update { it.copy(errorCrearServicio = "El nombre es obligatorio") }
+            return
+        }
+        if (tipoServicioId == null) {
+            _uiState.update { it.copy(errorCrearServicio = "Selecciona un tipo de servicio") }
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(creandoServicio = true, errorCrearServicio = null) }
+            servicioEmpresaRepository.crear(nombre.trim(), establecimientoId, tipoServicioId)
+                .onSuccess { creado ->
+                    val nuevoServicio = Servicio(
+                        id = creado.id,
+                        nombre = creado.nombre,
+                        establecimiento = creado.establecimiento_id,
+                        tipo_servicio = creado.tipo_servicio_id
+                    )
+                    _uiState.update {
+                        it.copy(
+                            creandoServicio = false,
+                            mostrarDialogoServicio = false,
+                            servicios = it.servicios + nuevoServicio,
+                            servicioId = nuevoServicio.id
+                        )
+                    }
+                }
+                .onFailure { e ->
+                    _uiState.update {
+                        it.copy(
+                            creandoServicio = false,
+                            errorCrearServicio = e.message ?: "No se pudo crear el servicio"
+                        )
+                    }
+                }
+        }
     }
 
     fun guardar() {
