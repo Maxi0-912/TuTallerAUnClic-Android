@@ -101,7 +101,7 @@ class AnuncioFormViewModel @Inject constructor(
                             fechaInicio = anuncio.fecha_inicio ?: "",
                             fechaFin = anuncio.fecha_fin ?: "",
                             establecimientoId = anuncio.establecimiento,
-                            servicioId = anuncio.servicio,
+                            servicioId = anuncio.servicio?.id,
                             ubicaciones = anuncio.ubicaciones ?: emptyList(),
                             imagenUrlActual = anuncio.imagen_url,
                             estado = anuncio.estado,

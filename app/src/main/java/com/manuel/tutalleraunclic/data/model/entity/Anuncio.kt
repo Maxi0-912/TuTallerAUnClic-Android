@@ -15,10 +15,11 @@ data class Anuncio(
     val establecimiento_nombre: String? = null,
     val fecha_inicio: String? = null,
     val fecha_fin: String? = null,
-    val servicio: Int? = null,
     val ubicaciones: List<String>? = null,
 
     // ── Solo lectura: nunca se envían al backend ──────────────────────────────
+    val servicio: Servicio? = null,
+    val accion: String? = null, // "agendar", "enlace" o null, calculado por el backend
     val estado: String? = null,
     val motivo_rechazo: String? = null,
     val es_pago: Boolean? = null,

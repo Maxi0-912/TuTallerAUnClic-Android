@@ -337,7 +337,19 @@ fun AnuncioFormScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            if (state.tipo == "imagen_boton") {
+            // Caso minoritario: la mayoría de los anuncios agendan un servicio o no
+            // tienen acción; el enlace externo queda oculto detrás de este switch.
+            var usarEnlaceExterno by remember { mutableStateOf(state.urlBoton.isNotBlank()) }
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Usar un enlace externo en vez de agendamiento", modifier = Modifier.weight(1f))
+                Switch(checked = usarEnlaceExterno, onCheckedChange = { usarEnlaceExterno = it })
+            }
+
+            if (usarEnlaceExterno) {
                 OutlinedTextField(
                     value = state.textoBoton,
                     onValueChange = viewModel::setTextoBoton,

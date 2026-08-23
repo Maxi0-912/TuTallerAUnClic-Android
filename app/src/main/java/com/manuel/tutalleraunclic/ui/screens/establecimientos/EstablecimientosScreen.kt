@@ -48,6 +48,9 @@ import com.manuel.tutalleraunclic.core.navigation.Routes
 import com.manuel.tutalleraunclic.data.model.EstablecimientoUI
 import com.manuel.tutalleraunclic.data.model.TipoEstablecimiento
 import com.manuel.tutalleraunclic.data.model.entity.Anuncio
+import com.manuel.tutalleraunclic.ui.components.AnuncioAccionBadge
+import com.manuel.tutalleraunclic.utils.esAnuncioClicable
+import com.manuel.tutalleraunclic.utils.manejarClickAnuncio
 import com.manuel.tutalleraunclic.viewmodel.AnunciosPublicosViewModel
 import com.manuel.tutalleraunclic.viewmodel.EstablecimientoViewModel
 import kotlinx.coroutines.delay
@@ -140,10 +143,7 @@ fun EstablecimientosScreen(navController: NavController) {
                             state = pagerState,
                             modifier = Modifier.fillMaxWidth()
                         ) { page ->
-                            BannerCard(
-                                banner = banners[page],
-                                onClick = { navController.navigate(Routes.detalle(banners[page].establecimiento.toString())) }
-                            )
+                            BannerCard(banner = banners[page], navController = navController)
                         }
                         Spacer(Modifier.height(8.dp))
                         Row(
@@ -247,13 +247,19 @@ fun EstablecimientosScreen(navController: NavController) {
 // ─── Composables privados ─────────────────────────────────────────────────────
 
 @Composable
-private fun BannerCard(banner: Anuncio, onClick: () -> Unit) {
+private fun BannerCard(banner: Anuncio, navController: NavController) {
+    val context = LocalContext.current
+    val clicable = esAnuncioClicable(banner)
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .height(200.dp)
             .clip(RoundedCornerShape(20.dp))
-            .clickable(onClick = onClick)
+            .then(
+                if (clicable) Modifier.clickable { manejarClickAnuncio(context, navController, banner) }
+                else Modifier
+            )
     ) {
         AsyncImage(
             model = fixImageUrl(banner.imagen_url),
@@ -321,6 +327,10 @@ private fun BannerCard(banner: Anuncio, onClick: () -> Unit) {
                     )
                 }
             }
+        }
+
+        if (clicable) {
+            AnuncioAccionBadge(accion = banner.accion, modifier = Modifier.align(Alignment.TopEnd).padding(12.dp))
         }
     }
 }
