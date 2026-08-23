@@ -5,6 +5,7 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.manuel.tutalleraunclic.data.model.entity.Establecimiento
+import com.manuel.tutalleraunclic.data.model.entity.Servicio
 import com.manuel.tutalleraunclic.data.model.response.CupoAnunciosResponse
 import com.manuel.tutalleraunclic.data.repository.AnuncioRepository
 import com.manuel.tutalleraunclic.data.repository.MainRepository
@@ -35,6 +36,10 @@ data class AnuncioFormUiState(
     val urlBoton: String = "",
     val fechaInicio: String = "",
     val fechaFin: String = "",
+
+    val servicios: List<Servicio> = emptyList(),
+    val servicioId: Int? = null,
+    val ubicaciones: List<String> = emptyList(),
 
     val imagenUri: Uri? = null,
     val imagenUrlActual: String? = null,
@@ -96,11 +101,14 @@ class AnuncioFormViewModel @Inject constructor(
                             fechaInicio = anuncio.fecha_inicio ?: "",
                             fechaFin = anuncio.fecha_fin ?: "",
                             establecimientoId = anuncio.establecimiento,
+                            servicioId = anuncio.servicio,
+                            ubicaciones = anuncio.ubicaciones ?: emptyList(),
                             imagenUrlActual = anuncio.imagen_url,
                             estado = anuncio.estado,
                             motivoRechazo = anuncio.motivo_rechazo
                         )
                     }
+                    cargarServicios(anuncio.establecimiento)
                 } else {
                     _uiEvent.emit(UiEvent.ShowError("No se pudo cargar el anuncio"))
                 }
@@ -113,8 +121,9 @@ class AnuncioFormViewModel @Inject constructor(
     }
 
     fun seleccionarEstablecimiento(id: Int) {
-        _uiState.update { it.copy(establecimientoId = id) }
+        _uiState.update { it.copy(establecimientoId = id, servicioId = null, servicios = emptyList()) }
         if (!_uiState.value.esEdicion) cargarCupo(id)
+        cargarServicios(id)
     }
 
     private fun cargarCupo(establecimientoId: Int) {
@@ -122,6 +131,17 @@ class AnuncioFormViewModel @Inject constructor(
             anuncioRepository.getCupo(establecimientoId)
                 .onSuccess { cupo -> _uiState.update { it.copy(cupo = cupo) } }
                 .onFailure { _uiState.update { it.copy(cupo = null) } }
+        }
+    }
+
+    private fun cargarServicios(establecimientoId: Int) {
+        viewModelScope.launch {
+            try {
+                val servicios = mainRepository.getServicios(establecimientoId)
+                _uiState.update { it.copy(servicios = servicios) }
+            } catch (_: Exception) {
+                _uiState.update { it.copy(servicios = emptyList()) }
+            }
         }
     }
 
@@ -135,6 +155,12 @@ class AnuncioFormViewModel @Inject constructor(
     fun setFechaInicio(v: String) = _uiState.update { it.copy(fechaInicio = v) }
     fun setFechaFin(v: String) = _uiState.update { it.copy(fechaFin = v) }
     fun setImagenUri(uri: Uri?) = _uiState.update { it.copy(imagenUri = uri) }
+    fun setServicioId(id: Int?) = _uiState.update { it.copy(servicioId = id) }
+
+    fun toggleUbicacion(valor: String) = _uiState.update {
+        val nuevas = if (valor in it.ubicaciones) it.ubicaciones - valor else it.ubicaciones + valor
+        it.copy(ubicaciones = nuevas)
+    }
 
     fun guardar() {
         val state = _uiState.value
@@ -171,6 +197,8 @@ class AnuncioFormViewModel @Inject constructor(
                     establecimientoId = establecimientoId,
                     fechaInicio = state.fechaInicio.ifBlank { null },
                     fechaFin = state.fechaFin.ifBlank { null },
+                    servicioId = state.servicioId,
+                    ubicaciones = state.ubicaciones,
                     imagen = imagenPart
                 )
             } else {
@@ -185,6 +213,8 @@ class AnuncioFormViewModel @Inject constructor(
                     establecimientoId = establecimientoId,
                     fechaInicio = state.fechaInicio.ifBlank { null },
                     fechaFin = state.fechaFin.ifBlank { null },
+                    servicioId = state.servicioId,
+                    ubicaciones = state.ubicaciones,
                     imagen = imagenPart
                 )
             }

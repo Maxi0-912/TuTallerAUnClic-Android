@@ -240,7 +240,13 @@ fun DetalleEstablecimientoScreen(
             item {
                 if (state.anuncios.isNotEmpty()) {
                     SeccionTitulo(titulo = "Ofertas especiales", icono = Icons.Default.Star)
-                    OfertasSection(anuncios = state.anuncios)
+                    OfertasSection(
+                        anuncios = state.anuncios,
+                        onAgendar = { anuncio ->
+                            val servicioId = anuncio.servicio ?: return@OfertasSection
+                            navController.navigate(Routes.cita(establecimientoId, servicioId, anuncio.id))
+                        }
+                    )
                 }
             }
 
@@ -559,12 +565,12 @@ private fun UbicacionSection(
 // ═══════════════════════════════════════════════════════════════════════════════
 
 @Composable
-private fun OfertasSection(anuncios: List<Anuncio>) {
+private fun OfertasSection(anuncios: List<Anuncio>, onAgendar: (Anuncio) -> Unit) {
     LazyRow(
         contentPadding        = PaddingValues(horizontal = 20.dp, vertical = 4.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        items(anuncios, key = { it.id }) { anuncio -> OfertaCard(anuncio) }
+        items(anuncios, key = { it.id }) { anuncio -> OfertaCard(anuncio, onAgendar) }
     }
     Spacer(Modifier.height(8.dp))
     HorizontalDivider(
@@ -574,65 +580,77 @@ private fun OfertasSection(anuncios: List<Anuncio>) {
 }
 
 @Composable
-private fun OfertaCard(anuncio: Anuncio) {
-    Box(
-        modifier = Modifier
-            .width(200.dp)
-            .height(110.dp)
-            .clip(RoundedCornerShape(16.dp))
-    ) {
-        val imagenUrl = fixImageUrl(anuncio.imagen_url)
-        if (imagenUrl != null) {
-            AsyncImage(
-                model = imagenUrl,
-                contentDescription = anuncio.titulo,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize()
-            )
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.65f))))
-            )
-        } else {
-            Box(modifier = Modifier.fillMaxSize().background(Brush.linearGradient(listOf(Azul, Morado))))
-        }
-
-        Column(
-            modifier = Modifier.fillMaxSize().padding(16.dp),
-            verticalArrangement = Arrangement.SpaceBetween
+private fun OfertaCard(anuncio: Anuncio, onAgendar: (Anuncio) -> Unit) {
+    Column(modifier = Modifier.width(200.dp)) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(110.dp)
+                .clip(RoundedCornerShape(16.dp))
         ) {
-            Text(
-                text     = anuncio.titulo,
-                style    = MaterialTheme.typography.titleSmall.copy(
-                    fontWeight = FontWeight.Bold,
-                    color      = Color.White
-                ),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            if (!anuncio.descripcion.isNullOrBlank()) {
+            val imagenUrl = fixImageUrl(anuncio.imagen_url)
+            if (imagenUrl != null) {
+                AsyncImage(
+                    model = imagenUrl,
+                    contentDescription = anuncio.titulo,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.65f))))
+                )
+            } else {
+                Box(modifier = Modifier.fillMaxSize().background(Brush.linearGradient(listOf(Azul, Morado))))
+            }
+
+            Column(
+                modifier = Modifier.fillMaxSize().padding(16.dp),
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
                 Text(
-                    text     = anuncio.descripcion,
-                    style    = MaterialTheme.typography.labelSmall.copy(color = Color.White.copy(alpha = 0.85f)),
-                    maxLines = 2,
+                    text     = anuncio.titulo,
+                    style    = MaterialTheme.typography.titleSmall.copy(
+                        fontWeight = FontWeight.Bold,
+                        color      = Color.White
+                    ),
+                    maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-            }
-            if (!anuncio.descuento.isNullOrBlank()) {
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = Color.White.copy(alpha = 0.2f)
-                ) {
+                if (!anuncio.descripcion.isNullOrBlank()) {
                     Text(
-                        text     = anuncio.descuento,
-                        style    = MaterialTheme.typography.labelMedium.copy(
-                            fontWeight = FontWeight.ExtraBold,
-                            color      = Color.White
-                        ),
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                        text     = anuncio.descripcion,
+                        style    = MaterialTheme.typography.labelSmall.copy(color = Color.White.copy(alpha = 0.85f)),
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
+                if (!anuncio.descuento.isNullOrBlank()) {
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = Color.White.copy(alpha = 0.2f)
+                    ) {
+                        Text(
+                            text     = anuncio.descuento,
+                            style    = MaterialTheme.typography.labelMedium.copy(
+                                fontWeight = FontWeight.ExtraBold,
+                                color      = Color.White
+                            ),
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                        )
+                    }
+                }
+            }
+        }
+        if (anuncio.servicio != null) {
+            Button(
+                onClick = { onAgendar(anuncio) },
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                shape = RoundedCornerShape(10.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Azul)
+            ) {
+                Text("Agendar", fontSize = 13.sp, fontWeight = FontWeight.Bold)
             }
         }
     }

@@ -47,6 +47,7 @@ class CitaViewModel @Inject constructor(
 
     private var establecimientoId: Int? = null
     private var servicioId: Int? = null
+    private var anuncioOrigenId: Int? = null
     private var establecimientoIdCita: Int = 0
     private var fechaOriginal: String = ""
     private var horaOriginal: String = ""
@@ -104,7 +105,8 @@ class CitaViewModel @Inject constructor(
                 hora            = hora,
                 servicio        = servicioId!!,
                 placa           = placa.trim().uppercase(),
-                descripcion     = descripcion.takeIf { it.isNotBlank() }
+                descripcion     = descripcion.takeIf { it.isNotBlank() },
+                anuncioOrigenId = anuncioOrigenId
             )
             val response = repository.crearCita(request)
             if (response.isSuccessful) {
@@ -162,9 +164,10 @@ class CitaViewModel @Inject constructor(
         }
     }
 
-    fun setIds(establecimiento: Int, servicio: Int) {
+    fun setIds(establecimiento: Int, servicio: Int, anuncioId: Int? = null) {
         establecimientoId = establecimiento
         servicioId        = servicio
+        anuncioOrigenId   = anuncioId
     }
 
     fun onDescripcionChange(value: String)  { descripcion = value }

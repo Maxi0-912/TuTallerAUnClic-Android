@@ -46,6 +46,7 @@ private val HorasDisponibles = listOf(
 fun CrearCitaScreen(
     establecimientoId: Int,
     servicioId: Int,
+    anuncioId: Int? = null,
     onSuccess: () -> Unit,
     onBack: () -> Unit = {},
     viewModel: CitaViewModel = hiltViewModel()
@@ -53,7 +54,7 @@ fun CrearCitaScreen(
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(Unit) {
-        viewModel.setIds(establecimientoId, servicioId)
+        viewModel.setIds(establecimientoId, servicioId, anuncioId)
     }
 
     LaunchedEffect(Unit) {

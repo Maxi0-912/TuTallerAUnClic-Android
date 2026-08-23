@@ -205,6 +205,20 @@ private fun AnuncioCard(
                         color = if (anuncio.pagado == true) Color(0xFF2E7D32) else Color(0xFFE65100)
                     )
                 }
+                if (!anuncio.ubicaciones.isNullOrEmpty()) {
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        "Ubicaciones: ${anuncio.ubicaciones.joinToString(", ") { it.replaceFirstChar(Char::uppercase) }}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    )
+                }
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    "${anuncio.citas_generadas_count ?: 0} cita${if ((anuncio.citas_generadas_count ?: 0) == 1) "" else "s"} generada${if ((anuncio.citas_generadas_count ?: 0) == 1) "" else "s"}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                )
                 Spacer(Modifier.height(10.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedButton(onClick = onEditar, modifier = Modifier.weight(1f)) {

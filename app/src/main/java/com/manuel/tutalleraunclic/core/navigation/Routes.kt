@@ -18,7 +18,7 @@ object Routes {
     const val LAVADERO_ARG = "lavadero/{id}"
 
     const val CITA     = "cita"
-    const val CITA_ARG = "cita/{establecimientoId}/{servicioId}"
+    const val CITA_ARG = "cita/{establecimientoId}/{servicioId}?anuncioId={anuncioId}"
 
     const val MIS_CITAS    = "mis_citas"
     const val CREAR_CITA   = "crear_cita"
@@ -55,8 +55,8 @@ object Routes {
 
     const val RESENA_ARG = "resena/{citaId}/{establecimientoId}"
 
-    fun cita(establecimientoId: Int, servicioId: Int) =
-        "cita/$establecimientoId/$servicioId"
+    fun cita(establecimientoId: Int, servicioId: Int, anuncioId: Int? = null) =
+        "cita/$establecimientoId/$servicioId?anuncioId=${anuncioId ?: -1}"
 
     fun detalle(id: String)  = "$DETALLE/$id"
     fun taller(id: Int)      = "$TALLER/$id"

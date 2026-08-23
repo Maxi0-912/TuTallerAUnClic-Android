@@ -210,14 +210,17 @@ fun AppRoot(
                 route = Routes.CITA_ARG,
                 arguments = listOf(
                     navArgument("establecimientoId") { type = NavType.IntType },
-                    navArgument("servicioId") { type = NavType.IntType }
+                    navArgument("servicioId") { type = NavType.IntType },
+                    navArgument("anuncioId") { type = NavType.IntType; defaultValue = -1 }
                 )
             ) { backStackEntry ->
                 val establecimientoId = backStackEntry.arguments?.getInt("establecimientoId") ?: 0
                 val servicioId = backStackEntry.arguments?.getInt("servicioId") ?: 0
+                val anuncioId = backStackEntry.arguments?.getInt("anuncioId")?.takeIf { it != -1 }
                 CrearCitaScreen(
                     establecimientoId = establecimientoId,
                     servicioId = servicioId,
+                    anuncioId = anuncioId,
                     onSuccess = { navController.popBackStack() },
                     onBack    = { navController.popBackStack() }
                 )

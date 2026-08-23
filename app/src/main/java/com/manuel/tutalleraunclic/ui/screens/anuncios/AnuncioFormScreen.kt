@@ -38,6 +38,7 @@ import java.time.ZoneOffset
 
 private val TIPOS = listOf("imagen" to "Solo imagen", "imagen_texto" to "Imagen con texto", "imagen_boton" to "Imagen con botón")
 private val CATEGORIAS = listOf("banner" to "Banner (inicio)", "oferta" to "Oferta")
+private val UBICACIONES = listOf("perfil" to "Perfil", "banner" to "Banner")
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -278,6 +279,54 @@ fun AnuncioFormScreen(
                             categoriaExpanded = false
                         })
                     }
+                }
+            }
+
+            // ── Servicio asociado (opcional) ────────────────────────────────────
+            var servicioExpanded by remember { mutableStateOf(false) }
+            val servicioSeleccionado = state.servicios.firstOrNull { it.id == state.servicioId }
+            ExposedDropdownMenuBox(expanded = servicioExpanded, onExpandedChange = { servicioExpanded = it }) {
+                OutlinedTextField(
+                    value = servicioSeleccionado?.nombre ?: "Sin servicio asociado",
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Servicio (opcional)") },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = servicioExpanded) },
+                    modifier = Modifier.fillMaxWidth().menuAnchor()
+                )
+                ExposedDropdownMenu(expanded = servicioExpanded, onDismissRequest = { servicioExpanded = false }) {
+                    DropdownMenuItem(text = { Text("Sin servicio asociado") }, onClick = {
+                        viewModel.setServicioId(null)
+                        servicioExpanded = false
+                    })
+                    state.servicios.forEach { servicio ->
+                        DropdownMenuItem(text = { Text(servicio.nombre) }, onClick = {
+                            viewModel.setServicioId(servicio.id)
+                            servicioExpanded = false
+                        })
+                    }
+                }
+            }
+
+            // ── Ubicaciones (dónde se muestra el anuncio) ───────────────────────
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Ubicaciones", style = MaterialTheme.typography.labelLarge)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    UBICACIONES.forEach { (valor, etiqueta) ->
+                        val seleccionada = valor in state.ubicaciones
+                        FilterChip(
+                            selected = seleccionada,
+                            onClick = { viewModel.toggleUbicacion(valor) },
+                            label = { Text(etiqueta) }
+                        )
+                    }
+                }
+                if ("banner" in state.ubicaciones) {
+                    Text(
+                        "El anuncio será de pago porque incluye Banner.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
                 }
             }
 

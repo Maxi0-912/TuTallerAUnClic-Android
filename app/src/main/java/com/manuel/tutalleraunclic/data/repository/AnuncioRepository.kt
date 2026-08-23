@@ -42,6 +42,9 @@ class AnuncioRepository @Inject constructor(
     suspend fun getCupo(establecimientoId: Int): Result<CupoAnunciosResponse> =
         safeApiCall { api.getCupoAnuncios(establecimientoId) }
 
+    private fun List<String>.asTextBodyParts(): List<RequestBody> =
+        map { it.toRequestBody("text/plain".toMediaType()) }
+
     suspend fun crearAnuncio(
         titulo: String,
         descripcion: String?,
@@ -53,6 +56,8 @@ class AnuncioRepository @Inject constructor(
         establecimientoId: Int,
         fechaInicio: String?,
         fechaFin: String?,
+        servicioId: Int?,
+        ubicaciones: List<String>,
         imagen: MultipartBody.Part?
     ): Result<Anuncio> = safeApiCall {
         api.crearAnuncio(
@@ -66,6 +71,8 @@ class AnuncioRepository @Inject constructor(
             establecimiento = establecimientoId.toString().toRequestBody("text/plain".toMediaType()),
             fechaInicio = fechaInicio.asTextBody(),
             fechaFin = fechaFin.asTextBody(),
+            servicio = servicioId?.toString().asTextBody(),
+            ubicaciones = ubicaciones.asTextBodyParts(),
             imagen = imagen
         )
     }
@@ -82,6 +89,8 @@ class AnuncioRepository @Inject constructor(
         establecimientoId: Int?,
         fechaInicio: String?,
         fechaFin: String?,
+        servicioId: Int?,
+        ubicaciones: List<String>?,
         imagen: MultipartBody.Part?
     ): Result<Anuncio> = safeApiCall {
         api.editarAnuncio(
@@ -96,6 +105,8 @@ class AnuncioRepository @Inject constructor(
             establecimiento = establecimientoId?.toString().asTextBody(),
             fechaInicio = fechaInicio.asTextBody(),
             fechaFin = fechaFin.asTextBody(),
+            servicio = servicioId?.toString().asTextBody(),
+            ubicaciones = ubicaciones?.asTextBodyParts(),
             imagen = imagen
         )
     }
