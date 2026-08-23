@@ -24,6 +24,5 @@ data class Anuncio(
     val motivo_rechazo: String? = null,
     val es_pago: Boolean? = null,
     val pagado: Boolean? = null,
-    val requiere_pago: Boolean? = null,
     val citas_generadas_count: Int? = null
 )

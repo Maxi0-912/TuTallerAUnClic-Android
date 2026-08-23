@@ -221,8 +221,11 @@ class AnuncioFormViewModel @Inject constructor(
 
             result
                 .onSuccess { anuncio ->
-                    val mensaje = if (anuncio.requiere_pago == true) {
-                        "Tu anuncio quedó pendiente de pago y de aprobación. Nos pondremos en contacto para coordinar el pago."
+                    // El backend no manda un campo "requiere_pago": un anuncio requiere pago
+                    // cuando es_pago == true y todavía no está pagado.
+                    val requierePago = anuncio.es_pago == true && anuncio.pagado != true
+                    val mensaje = if (requierePago) {
+                        "Tu anuncio quedó pendiente de pago y de aprobación."
                     } else {
                         "Tu anuncio queda pendiente de aprobación"
                     }
@@ -230,7 +233,7 @@ class AnuncioFormViewModel @Inject constructor(
                         it.copy(
                             isSaving = false,
                             guardadoExitoso = true,
-                            requierePago = anuncio.requiere_pago == true,
+                            requierePago = requierePago,
                             anuncioId = anuncio.id
                         )
                     }
