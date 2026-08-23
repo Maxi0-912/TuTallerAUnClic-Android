@@ -2,6 +2,7 @@ package com.manuel.tutalleraunclic.data.repository
 
 import com.manuel.tutalleraunclic.data.model.entity.Anuncio
 import com.manuel.tutalleraunclic.data.model.response.CupoAnunciosResponse
+import com.manuel.tutalleraunclic.data.model.response.PagoPendienteResponse
 import com.manuel.tutalleraunclic.data.network.ApiService
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
@@ -41,6 +42,9 @@ class AnuncioRepository @Inject constructor(
 
     suspend fun getCupo(establecimientoId: Int): Result<CupoAnunciosResponse> =
         safeApiCall { api.getCupoAnuncios(establecimientoId) }
+
+    suspend fun crearPagoPendiente(anuncioId: Int): Result<PagoPendienteResponse> =
+        safeApiCall { api.crearPagoPendiente(anuncioId) }
 
     /**
      * El backend recibe ubicaciones como un JSONField, no como partes multipart

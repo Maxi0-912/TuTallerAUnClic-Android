@@ -11,6 +11,7 @@ import com.manuel.tutalleraunclic.data.model.response.CitaEmpresaResponse
 import com.manuel.tutalleraunclic.data.model.response.DashboardEmpresaResponse
 import com.manuel.tutalleraunclic.data.model.response.EstablecimientoEmpresaResponse
 import com.manuel.tutalleraunclic.data.model.response.ServicioEmpresaResponse
+import com.manuel.tutalleraunclic.data.model.response.PagoPendienteResponse
 
 interface ApiService {
 
@@ -324,4 +325,9 @@ interface ApiService {
     suspend fun getCupoAnuncios(
         @Query("establecimiento") establecimientoId: Int
     ): Response<CupoAnunciosResponse>
+
+    @POST("api/empresa/anuncios/{id}/pago/")
+    suspend fun crearPagoPendiente(
+        @Path("id") id: Int
+    ): Response<PagoPendienteResponse>
 }
