@@ -42,8 +42,15 @@ class AnuncioRepository @Inject constructor(
     suspend fun getCupo(establecimientoId: Int): Result<CupoAnunciosResponse> =
         safeApiCall { api.getCupoAnuncios(establecimientoId) }
 
-    private fun List<String>.asTextBodyParts(): List<RequestBody> =
-        map { it.toRequestBody("text/plain".toMediaType()) }
+    /**
+     * El backend recibe ubicaciones como un JSONField, no como partes multipart
+     * repetidas: un solo campo con el array serializado, ej. ["perfil","banner"].
+     * (List<RequestBody> como @Part también falla en Retrofit: se compila a
+     * List<? extends RequestBody> y Retrofit rechaza wildcards en tiempo de
+     * ejecución.)
+     */
+    private fun List<String>.toJsonArrayBody(): RequestBody =
+        org.json.JSONArray(this).toString().toRequestBody("application/json".toMediaType())
 
     suspend fun crearAnuncio(
         titulo: String,
@@ -72,7 +79,7 @@ class AnuncioRepository @Inject constructor(
             fechaInicio = fechaInicio.asTextBody(),
             fechaFin = fechaFin.asTextBody(),
             servicio = servicioId?.toString().asTextBody(),
-            ubicaciones = ubicaciones.asTextBodyParts(),
+            ubicaciones = ubicaciones.toJsonArrayBody(),
             imagen = imagen
         )
     }
@@ -106,7 +113,7 @@ class AnuncioRepository @Inject constructor(
             fechaInicio = fechaInicio.asTextBody(),
             fechaFin = fechaFin.asTextBody(),
             servicio = servicioId?.toString().asTextBody(),
-            ubicaciones = ubicaciones?.asTextBodyParts(),
+            ubicaciones = ubicaciones?.toJsonArrayBody(),
             imagen = imagen
         )
     }

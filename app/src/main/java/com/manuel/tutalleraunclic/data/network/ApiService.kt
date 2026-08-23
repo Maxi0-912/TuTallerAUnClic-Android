@@ -292,7 +292,7 @@ interface ApiService {
         @Part("fecha_inicio") fechaInicio: okhttp3.RequestBody?,
         @Part("fecha_fin") fechaFin: okhttp3.RequestBody?,
         @Part("servicio") servicio: okhttp3.RequestBody?,
-        @Part("ubicaciones") ubicaciones: List<okhttp3.RequestBody>?,
+        @Part("ubicaciones") ubicaciones: okhttp3.RequestBody?,
         @Part imagen: okhttp3.MultipartBody.Part?
     ): Response<Anuncio>
 
@@ -311,7 +311,7 @@ interface ApiService {
         @Part("fecha_inicio") fechaInicio: okhttp3.RequestBody?,
         @Part("fecha_fin") fechaFin: okhttp3.RequestBody?,
         @Part("servicio") servicio: okhttp3.RequestBody?,
-        @Part("ubicaciones") ubicaciones: List<okhttp3.RequestBody>?,
+        @Part("ubicaciones") ubicaciones: okhttp3.RequestBody?,
         @Part imagen: okhttp3.MultipartBody.Part?
     ): Response<Anuncio>
 
