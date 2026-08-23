@@ -230,7 +230,8 @@ class AnuncioFormViewModel @Inject constructor(
                         it.copy(
                             isSaving = false,
                             guardadoExitoso = true,
-                            requierePago = anuncio.requiere_pago == true
+                            requierePago = anuncio.requiere_pago == true,
+                            anuncioId = anuncio.id
                         )
                     }
                     _uiEvent.emit(UiEvent.ShowMessage(mensaje))

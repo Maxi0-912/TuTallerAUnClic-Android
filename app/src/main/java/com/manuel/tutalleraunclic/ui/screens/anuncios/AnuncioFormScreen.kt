@@ -64,8 +64,22 @@ fun AnuncioFormScreen(
         }
     }
 
+    var mostrarPagoNequi by remember { mutableStateOf(false) }
+
     LaunchedEffect(state.guardadoExitoso) {
-        if (state.guardadoExitoso) onSuccess()
+        if (state.guardadoExitoso) {
+            if (state.requierePago) mostrarPagoNequi = true else onSuccess()
+        }
+    }
+
+    if (mostrarPagoNequi) {
+        PantallaPagoNequi(
+            anuncioId = state.anuncioId ?: 0,
+            onCerrar = {
+                mostrarPagoNequi = false
+                onSuccess()
+            }
+        )
     }
 
     val launcher = rememberLauncherForActivityResult(

@@ -47,6 +47,7 @@ fun MisAnunciosScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     var anuncioAEliminar by remember { mutableStateOf<Int?>(null) }
+    var anuncioAPagar by remember { mutableStateOf<Int?>(null) }
     val lifecycleOwner = LocalLifecycleOwner.current
 
     LaunchedEffect(Unit) { viewModel.cargarMisAnuncios() }
@@ -119,6 +120,10 @@ fun MisAnunciosScreen(
                 )
             }
 
+            anuncioAPagar?.let { id ->
+                PantallaPagoNequi(anuncioId = id, onCerrar = { anuncioAPagar = null })
+            }
+
             when {
                 state.isLoading && state.anuncios.isEmpty() -> {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -150,7 +155,8 @@ fun MisAnunciosScreen(
                             AnuncioCard(
                                 anuncio = anuncio,
                                 onEditar = { onEditar(anuncio.id) },
-                                onEliminar = { anuncioAEliminar = anuncio.id }
+                                onEliminar = { anuncioAEliminar = anuncio.id },
+                                onPagar = { anuncioAPagar = anuncio.id }
                             )
                         }
                     }
@@ -164,7 +170,8 @@ fun MisAnunciosScreen(
 private fun AnuncioCard(
     anuncio: Anuncio,
     onEditar: () -> Unit,
-    onEliminar: () -> Unit
+    onEliminar: () -> Unit,
+    onPagar: () -> Unit
 ) {
     Card(shape = RoundedCornerShape(16.dp)) {
         Column {
@@ -199,11 +206,18 @@ private fun AnuncioCard(
                 }
                 if (anuncio.es_pago == true) {
                     Spacer(Modifier.height(6.dp))
-                    Text(
-                        if (anuncio.pagado == true) "Pago confirmado" else "Pendiente de pago",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = if (anuncio.pagado == true) Color(0xFF2E7D32) else Color(0xFFE65100)
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            if (anuncio.pagado == true) "Pago confirmado" else "Pendiente de pago",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = if (anuncio.pagado == true) Color(0xFF2E7D32) else Color(0xFFE65100)
+                        )
+                        if (anuncio.pagado != true) {
+                            TextButton(onClick = onPagar, contentPadding = PaddingValues(horizontal = 8.dp)) {
+                                Text("Pagar", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
                 }
                 if (!anuncio.ubicaciones.isNullOrEmpty()) {
                     Spacer(Modifier.height(6.dp))
