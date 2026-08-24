@@ -363,6 +363,30 @@ private fun TarjetaCitaEmpresa(
                 BadgeEstado(cita.estado)
             }
 
+            cita.anuncio_origen_detalle?.let { anuncio ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(Color(0xFF7C3AED).copy(alpha = 0.1f))
+                        .padding(horizontal = 10.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Text("🏷️", style = MaterialTheme.typography.labelSmall)
+                    Text(
+                        buildString {
+                            append("Viene de la promo: ")
+                            append(anuncio.titulo)
+                            if (!anuncio.descuento.isNullOrBlank()) append(" — ${anuncio.descuento}")
+                        },
+                        style = MaterialTheme.typography.labelMedium,
+                        color = Color(0xFF7C3AED),
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                 InfoBox("Fecha", cita.fecha, modifier = Modifier.weight(1f))
                 InfoBox("Hora", cita.hora.take(5), modifier = Modifier.weight(1f))

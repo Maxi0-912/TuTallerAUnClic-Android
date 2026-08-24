@@ -14,4 +14,6 @@ data class CitaEmpresaResponse(
     val vehiculo_placa: String? = null,
     val descripcion: String? = null,
     val comentario_empresa: String? = null,
+    val anuncio_origen: Int? = null,
+    val anuncio_origen_detalle: AnuncioOrigenResponse? = null,
 )
