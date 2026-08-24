@@ -19,7 +19,15 @@ fun manejarClickAnuncio(context: Context, navController: NavController, anuncio:
     when (anuncio.accion) {
         "agendar" -> {
             val servicioId = anuncio.servicio?.id ?: return
-            navController.navigate(Routes.cita(anuncio.establecimiento, servicioId, anuncio.id))
+            navController.navigate(
+                Routes.cita(
+                    establecimientoId = anuncio.establecimiento,
+                    servicioId = servicioId,
+                    anuncioId = anuncio.id,
+                    anuncioTitulo = anuncio.titulo,
+                    anuncioDescuento = anuncio.descuento
+                )
+            )
         }
         "enlace" -> {
             val url = anuncio.url_boton

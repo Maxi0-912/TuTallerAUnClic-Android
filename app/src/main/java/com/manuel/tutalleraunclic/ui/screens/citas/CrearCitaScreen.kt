@@ -14,6 +14,7 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.DirectionsCar
+import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material3.*
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.*
@@ -47,6 +48,8 @@ fun CrearCitaScreen(
     establecimientoId: Int,
     servicioId: Int,
     anuncioId: Int? = null,
+    anuncioTitulo: String? = null,
+    anuncioDescuento: String? = null,
     onSuccess: () -> Unit,
     onBack: () -> Unit = {},
     viewModel: CitaViewModel = hiltViewModel()
@@ -54,7 +57,7 @@ fun CrearCitaScreen(
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(Unit) {
-        viewModel.setIds(establecimientoId, servicioId, anuncioId)
+        viewModel.setIds(establecimientoId, servicioId, anuncioId, anuncioTitulo)
     }
 
     LaunchedEffect(Unit) {
@@ -142,6 +145,35 @@ fun CrearCitaScreen(
             }
 
             Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 20.dp)) {
+
+                // ── Aviso: viene de un anuncio (fijo, no editable) ──────────────
+                if (!anuncioTitulo.isNullOrBlank()) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFF7C3AED).copy(alpha = 0.1f))
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(14.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Icon(Icons.Default.LocalOffer, contentDescription = null, tint = Color(0xFF7C3AED))
+                            Column {
+                                Text(
+                                    "Agendando desde",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = Color(0xFF7C3AED)
+                                )
+                                Text(
+                                    if (!anuncioDescuento.isNullOrBlank()) "$anuncioTitulo — $anuncioDescuento" else anuncioTitulo,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
+                }
 
                 // ── Card: Tu vehículo ────────────────────────────────────────
                 Card(

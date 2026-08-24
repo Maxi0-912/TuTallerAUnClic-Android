@@ -48,6 +48,7 @@ class CitaViewModel @Inject constructor(
     private var establecimientoId: Int? = null
     private var servicioId: Int? = null
     private var anuncioOrigenId: Int? = null
+    private var anuncioOrigenTitulo: String? = null
     private var establecimientoIdCita: Int = 0
     private var fechaOriginal: String = ""
     private var horaOriginal: String = ""
@@ -111,7 +112,9 @@ class CitaViewModel @Inject constructor(
             val response = repository.crearCita(request)
             if (response.isSuccessful) {
                 mostrarNotificacionLocal(fecha, hora)
-                emitirMensaje("Cita creada correctamente")
+                val mensaje = anuncioOrigenTitulo?.let { "Cita creada correctamente — Promo: $it" }
+                    ?: "Cita creada correctamente"
+                emitirMensaje(mensaje)
             } else {
                 val body = response.errorBody()?.string()
                 emitirError(body ?: "Error al crear cita")
@@ -164,10 +167,11 @@ class CitaViewModel @Inject constructor(
         }
     }
 
-    fun setIds(establecimiento: Int, servicio: Int, anuncioId: Int? = null) {
+    fun setIds(establecimiento: Int, servicio: Int, anuncioId: Int? = null, anuncioTitulo: String? = null) {
         establecimientoId = establecimiento
         servicioId        = servicio
         anuncioOrigenId   = anuncioId
+        anuncioOrigenTitulo = anuncioTitulo
     }
 
     fun onDescripcionChange(value: String)  { descripcion = value }

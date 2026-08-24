@@ -211,16 +211,24 @@ fun AppRoot(
                 arguments = listOf(
                     navArgument("establecimientoId") { type = NavType.IntType },
                     navArgument("servicioId") { type = NavType.IntType },
-                    navArgument("anuncioId") { type = NavType.IntType; defaultValue = -1 }
+                    navArgument("anuncioId") { type = NavType.IntType; defaultValue = -1 },
+                    navArgument("anuncioTitulo") { type = NavType.StringType; defaultValue = "" },
+                    navArgument("anuncioDescuento") { type = NavType.StringType; defaultValue = "" }
                 )
             ) { backStackEntry ->
                 val establecimientoId = backStackEntry.arguments?.getInt("establecimientoId") ?: 0
                 val servicioId = backStackEntry.arguments?.getInt("servicioId") ?: 0
                 val anuncioId = backStackEntry.arguments?.getInt("anuncioId")?.takeIf { it != -1 }
+                val anuncioTitulo = backStackEntry.arguments?.getString("anuncioTitulo")
+                    ?.let { java.net.URLDecoder.decode(it, "UTF-8") }?.takeIf { it.isNotBlank() }
+                val anuncioDescuento = backStackEntry.arguments?.getString("anuncioDescuento")
+                    ?.let { java.net.URLDecoder.decode(it, "UTF-8") }?.takeIf { it.isNotBlank() }
                 CrearCitaScreen(
                     establecimientoId = establecimientoId,
                     servicioId = servicioId,
                     anuncioId = anuncioId,
+                    anuncioTitulo = anuncioTitulo,
+                    anuncioDescuento = anuncioDescuento,
                     onSuccess = { navController.popBackStack() },
                     onBack    = { navController.popBackStack() }
                 )

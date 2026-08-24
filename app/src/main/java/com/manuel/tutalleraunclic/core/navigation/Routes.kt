@@ -1,5 +1,7 @@
 package com.manuel.tutalleraunclic.core.navigation
 
+import java.net.URLEncoder
+
 object Routes {
 
     const val LOGIN            = "login"
@@ -18,7 +20,8 @@ object Routes {
     const val LAVADERO_ARG = "lavadero/{id}"
 
     const val CITA     = "cita"
-    const val CITA_ARG = "cita/{establecimientoId}/{servicioId}?anuncioId={anuncioId}"
+    const val CITA_ARG = "cita/{establecimientoId}/{servicioId}" +
+        "?anuncioId={anuncioId}&anuncioTitulo={anuncioTitulo}&anuncioDescuento={anuncioDescuento}"
 
     const val MIS_CITAS    = "mis_citas"
     const val CREAR_CITA   = "crear_cita"
@@ -55,8 +58,18 @@ object Routes {
 
     const val RESENA_ARG = "resena/{citaId}/{establecimientoId}"
 
-    fun cita(establecimientoId: Int, servicioId: Int, anuncioId: Int? = null) =
-        "cita/$establecimientoId/$servicioId?anuncioId=${anuncioId ?: -1}"
+    fun cita(
+        establecimientoId: Int,
+        servicioId: Int,
+        anuncioId: Int? = null,
+        anuncioTitulo: String? = null,
+        anuncioDescuento: String? = null
+    ): String {
+        val titulo = URLEncoder.encode(anuncioTitulo.orEmpty(), "UTF-8")
+        val descuento = URLEncoder.encode(anuncioDescuento.orEmpty(), "UTF-8")
+        return "cita/$establecimientoId/$servicioId" +
+            "?anuncioId=${anuncioId ?: -1}&anuncioTitulo=$titulo&anuncioDescuento=$descuento"
+    }
 
     fun detalle(id: String)  = "$DETALLE/$id"
     fun taller(id: Int)      = "$TALLER/$id"
