@@ -21,9 +21,9 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 sealed class LoginUiState {
-    object Idle              : LoginUiState()
-    object Loading           : LoginUiState()
-    object NeedsRolSelection : LoginUiState()
+    object Idle    : LoginUiState()
+    object Loading : LoginUiState()
+    data class NeedsRolSelection(val nombre: String?, val foto: String?) : LoginUiState()
     data class Success(val rolNombre: String) : LoginUiState()
     data class Error(val message: String)     : LoginUiState()
 }
@@ -36,13 +36,17 @@ class LoginViewModel @Inject constructor(
     private val _uiState = MutableStateFlow<LoginUiState>(LoginUiState.Idle)
     val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()
 
+    // Se guarda acá (no en argumentos de navegación) para reenviarlo con el
+    // rol elegido en SeleccionarRolScreen, que comparte esta misma instancia.
+    private var pendingIdToken: String? = null
+
     fun login(username: String, password: String) {
         if (username.isBlank() || password.isBlank()) return
         viewModelScope.launch {
             _uiState.value = LoginUiState.Loading
             repository.login(LoginRequest(username.trim(), password.trim()))
                 .onSuccess { response ->
-                    _uiState.value = LoginUiState.Success(response.rolNombre)
+                    onLoginExitoso(response.rolNombre)
                 }
                 .onFailure { e ->
                     _uiState.value = LoginUiState.Error(mapError(e.message))
@@ -89,10 +93,11 @@ class LoginViewModel @Inject constructor(
 
                 repository.loginWithGoogle(idToken)
                     .onSuccess { response ->
-                        if (response.rolNombreDirecto.isNullOrBlank()) {
-                            _uiState.value = LoginUiState.NeedsRolSelection
+                        if (response.requiereRol) {
+                            pendingIdToken = idToken
+                            _uiState.value = LoginUiState.NeedsRolSelection(response.nombre, response.foto)
                         } else {
-                            _uiState.value = LoginUiState.Success(response.rolNombre)
+                            onLoginExitoso(response.rolNombre)
                         }
                     }
                     .onFailure { e ->
@@ -113,6 +118,42 @@ class LoginViewModel @Inject constructor(
     }
 
     fun resetState() { _uiState.value = LoginUiState.Idle }
+
+    /**
+     * Punto único para los 3 caminos de login exitoso (password, Google
+     * directo, Google+rol). Dispara el registro del token FCM sin bloquear
+     * la navegación — si falla, no debe demorar ni tumbar el login.
+     */
+    private fun onLoginExitoso(rolNombre: String) {
+        _uiState.value = LoginUiState.Success(rolNombre)
+        viewModelScope.launch { repository.registrarTokenFcm() }
+    }
+
+    /** Reenvía el mismo idToken guardado, ahora con el rol elegido. */
+    fun asignarRol(rol: Int) {
+        val idToken = pendingIdToken ?: run {
+            _uiState.value = LoginUiState.Error("Tu sesión de Google expiró, iniciá sesión de nuevo")
+            return
+        }
+        viewModelScope.launch {
+            _uiState.value = LoginUiState.Loading
+            repository.loginWithGoogle(idToken, rol)
+                .onSuccess { response ->
+                    pendingIdToken = null
+                    onLoginExitoso(response.rolNombre)
+                }
+                .onFailure { e ->
+                    // Se conserva pendingIdToken para poder reintentar sin repetir el selector de Google.
+                    _uiState.value = LoginUiState.Error(mapError(e.message))
+                }
+        }
+    }
+
+    /** Back en el selector de rol: cancelar sin crear nada y volver a Login limpio. */
+    fun cancelarSeleccionRol() {
+        pendingIdToken = null
+        _uiState.value = LoginUiState.Idle
+    }
 
     fun logout() {
         viewModelScope.launch {

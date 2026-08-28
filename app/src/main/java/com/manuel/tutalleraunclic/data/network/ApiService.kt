@@ -45,6 +45,16 @@ interface ApiService {
     @DELETE("auth/eliminar/")
     suspend fun eliminarCuenta(): Response<Unit>
 
+    @POST("usuarios/dispositivos/registrar/")
+    suspend fun registrarDispositivo(
+        @Body request: RegistrarDispositivoRequest
+    ): Response<Unit>
+
+    @POST("usuarios/dispositivos/desactivar/")
+    suspend fun desactivarDispositivo(
+        @Body request: DesactivarDispositivoRequest
+    ): Response<Unit>
+
     @Multipart
     @PATCH("usuarios/perfil/update/")
     suspend fun actualizarPerfilConFoto(

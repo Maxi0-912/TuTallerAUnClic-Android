@@ -41,6 +41,7 @@ import com.manuel.tutalleraunclic.ui.screens.resena.ResenaScreen
 import com.manuel.tutalleraunclic.ui.screens.anuncios.MisAnunciosScreen
 import com.manuel.tutalleraunclic.ui.screens.anuncios.AnuncioFormScreen
 import com.manuel.tutalleraunclic.ui.screens.dashboard.DashboardEmpresaScreen
+import com.manuel.tutalleraunclic.viewmodel.LoginViewModel
 import com.manuel.tutalleraunclic.viewmodel.NotificacionesViewModel
 import com.manuel.tutalleraunclic.viewmodel.RolViewModel
 import androidx.compose.material.icons.Icons
@@ -67,6 +68,11 @@ fun AppRoot(
     // RolViewModel scoped to Activity — shared instance passed down to LoginScreen
     val rolViewModel: RolViewModel = hiltViewModel()
     val rolActual by rolViewModel.rolNombre.collectAsStateWithLifecycle()
+
+    // LoginViewModel scoped to Activity también: SeleccionarRolScreen necesita
+    // la MISMA instancia para reusar el idToken guardado ahí (no en argumentos
+    // de navegación) al reenviar {idToken, rol} al backend.
+    val loginViewModel: LoginViewModel = hiltViewModel()
 
     val notifViewModel: NotificacionesViewModel = hiltViewModel()
     val unreadCount by notifViewModel.unreadCount.collectAsState()
@@ -117,6 +123,7 @@ fun AppRoot(
                 LoginScreen(
                     navController = navController,
                     rolViewModel = rolViewModel,
+                    viewModel = loginViewModel,
                     onNavigateToRegister = {
                         navController.navigate(Routes.REGISTER)
                     },
@@ -132,17 +139,22 @@ fun AppRoot(
 
             composable(Routes.SELECCIONAR_ROL) {
                 SeleccionarRolScreen(
+                    viewModel = loginViewModel,
                     onRolSeleccionado = { rol ->
                         when (rol.lowercase()) {
-                            "empresa" -> navController.navigate(Routes.EMPRESA_HOME) {
-                                popUpTo(Routes.SELECCIONAR_ROL) { inclusive = true }
+                            "empresa" -> navController.navigate(Routes.ESTABLECIMIENTO_EMP_CREAR) {
+                                popUpTo(Routes.LOGIN) { inclusive = true }
                                 launchSingleTop = true
                             }
                             else -> navController.navigate(Routes.ESTABLECIMIENTOS) {
-                                popUpTo(Routes.SELECCIONAR_ROL) { inclusive = true }
+                                popUpTo(Routes.LOGIN) { inclusive = true }
                                 launchSingleTop = true
                             }
                         }
+                    },
+                    onCancelar = {
+                        loginViewModel.cancelarSeleccionRol()
+                        navController.popBackStack()
                     }
                 )
             }
@@ -405,6 +417,7 @@ fun AppRoot(
                 if (rolActual?.lowercase() == "empresa") {
                     PerfilEmpresaScreen(
                         onNavigateToLogin = {
+                            loginViewModel.resetState()
                             navController.navigate(Routes.LOGIN) {
                                 popUpTo(0) { inclusive = true }
                                 launchSingleTop = true
@@ -414,6 +427,7 @@ fun AppRoot(
                 } else {
                     PerfilScreen(
                         onNavigateToLogin = {
+                            loginViewModel.resetState()
                             navController.navigate(Routes.LOGIN) {
                                 popUpTo(0) { inclusive = true }
                                 launchSingleTop = true

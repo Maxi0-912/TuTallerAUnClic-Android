@@ -1,3 +1,6 @@
 package com.manuel.tutalleraunclic.data.model.request
 
-data class GoogleAuthRequest(val idToken: String)
+data class GoogleAuthRequest(
+    val idToken: String,
+    val rol: Int? = null
+)

@@ -1,5 +1,7 @@
 package com.manuel.tutalleraunclic.data.repository
 
+import android.util.Log
+import com.google.firebase.messaging.FirebaseMessaging
 import com.manuel.tutalleraunclic.data.local.TokenManager
 import com.manuel.tutalleraunclic.data.model.entity.Calificacion
 import com.manuel.tutalleraunclic.data.model.entity.Establecimiento
@@ -9,12 +11,15 @@ import com.manuel.tutalleraunclic.data.model.request.*
 import com.manuel.tutalleraunclic.data.model.response.DashboardEmpresaResponse
 import com.manuel.tutalleraunclic.data.model.response.LoginResponse
 import com.manuel.tutalleraunclic.data.network.ApiService
+import kotlinx.coroutines.suspendCancellableCoroutine
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import retrofit2.Response
 import javax.inject.Inject
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 import com.manuel.tutalleraunclic.data.model.entity.Servicio
 
 class MainRepository @Inject constructor(
@@ -32,9 +37,14 @@ class MainRepository @Inject constructor(
 
             if (response.isSuccessful) {
                 val body = response.body()!!
+                val access = body.access
+                val refresh = body.refresh
+                if (access == null || refresh == null) {
+                    return Result.failure(Exception("Respuesta de login inválida"))
+                }
 
                 // Tokens primero — AuthInterceptor los necesita para llamar a /perfil/
-                tokenManager.saveTokens(body.access, body.refresh)
+                tokenManager.saveTokens(access, refresh)
 
                 // El backend solo devuelve access y refresh, sin rol.
                 // Llamamos a /perfil/ para obtener el rol real del usuario.
@@ -69,14 +79,25 @@ class MainRepository @Inject constructor(
         }
     }
 
-    suspend fun loginWithGoogle(idToken: String): Result<LoginResponse> {
+    /**
+     * Mismo endpoint para las dos llamadas del flujo Google:
+     * [rol] null → si el email no existe, el backend responde requiere_rol=true
+     * sin crear la cuenta ni emitir tokens. [rol] no-null → reenvía el mismo
+     * idToken junto con el rol elegido; ahí sí crea la cuenta y devuelve JWT.
+     */
+    suspend fun loginWithGoogle(idToken: String, rol: Int? = null): Result<LoginResponse> {
         return try {
-            val response = api.loginWithGoogle(GoogleAuthRequest(idToken))
+            val response = api.loginWithGoogle(GoogleAuthRequest(idToken, rol))
             if (response.isSuccessful) {
                 val body = response.body()!!
+
+                if (body.requiereRol || body.access == null || body.refresh == null) {
+                    // Todavía no hay sesión: no guardar nada, dejar que el ViewModel
+                    // muestre el selector de rol (o el error si esto no era esperado).
+                    return Result.success(body)
+                }
+
                 tokenManager.saveTokens(body.access, body.refresh)
-                // Empty string signals "new user without role" — ViewModel will redirect
-                // to role-selection screen instead of using the "cliente" fallback.
                 val rolFinal: String = try {
                     val perfilResponse = api.getPerfil()
                     if (perfilResponse.isSuccessful)
@@ -88,22 +109,6 @@ class MainRepository @Inject constructor(
             } else {
                 val errorBody = response.errorBody()?.string()
                 Result.failure(Exception(parseDjangoError(errorBody) ?: "Error al iniciar con Google"))
-            }
-        } catch (e: Exception) {
-            Result.failure(Exception("Error de conexión"))
-        }
-    }
-
-    suspend fun asignarRol(rolId: Int): Result<String> {
-        return try {
-            val response = api.actualizarPerfil(UpdateUserRequest(rol = rolId))
-            if (response.isSuccessful) {
-                val rolNombre = response.body()?.rol_nombre?.lowercase()?.trim()
-                    ?: if (rolId == 3) "empresa" else "cliente"
-                tokenManager.saveRolNombre(rolNombre)
-                Result.success(rolNombre)
-            } else {
-                Result.failure(Exception("Error ${response.code()}"))
             }
         } catch (e: Exception) {
             Result.failure(Exception("Error de conexión"))
@@ -150,7 +155,46 @@ class MainRepository @Inject constructor(
 
 
     suspend fun logout() {
+        // Antes de limpiar: desactivar el token FCM requiere el JWT todavía vigente.
+        desactivarTokenFcm()
         tokenManager.clearAll()
+    }
+
+    // ==========================
+    // 🔔 PUSH (FCM)
+    // ==========================
+
+    private suspend fun obtenerTokenFcm(): String = suspendCancellableCoroutine { cont ->
+        FirebaseMessaging.getInstance().token
+            .addOnSuccessListener { cont.resume(it) }
+            .addOnFailureListener { cont.resumeWithException(it) }
+    }
+
+    /**
+     * Registra el token FCM del dispositivo contra el backend. [token] se pasa
+     * explícito desde MyFirebaseService.onNewToken (ya lo tiene, no hace falta
+     * volver a pedírselo a Firebase); en el resto de los casos (login, apertura
+     * con sesión activa) se obtiene acá. Idempotente en el backend — se puede
+     * llamar todas las veces que haga falta. Nunca propaga: solo logea.
+     */
+    suspend fun registrarTokenFcm(token: String? = null) {
+        try {
+            val fcmToken = token ?: obtenerTokenFcm()
+            val response = api.registrarDispositivo(RegistrarDispositivoRequest(fcmToken))
+            Log.d("FCM", "Registro de token: ${response.code()}")
+        } catch (e: Exception) {
+            Log.e("FCM", "No se pudo registrar el token FCM", e)
+        }
+    }
+
+    suspend fun desactivarTokenFcm() {
+        try {
+            val fcmToken = obtenerTokenFcm()
+            val response = api.desactivarDispositivo(DesactivarDispositivoRequest(fcmToken))
+            Log.d("FCM", "Desactivación de token: ${response.code()}")
+        } catch (e: Exception) {
+            Log.e("FCM", "No se pudo desactivar el token FCM", e)
+        }
     }
 
 

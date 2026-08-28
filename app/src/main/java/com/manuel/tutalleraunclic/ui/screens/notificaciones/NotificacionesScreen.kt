@@ -1,5 +1,10 @@
 package com.manuel.tutalleraunclic.ui.screens.notificaciones
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -15,8 +20,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import com.manuel.tutalleraunclic.data.model.entity.Notificacion
 import androidx.compose.foundation.Image
 import androidx.compose.ui.res.painterResource
@@ -32,6 +39,20 @@ fun NotificacionesScreen(
     val notificaciones by viewModel.notificaciones.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val unreadCount by viewModel.unreadCount.collectAsState()
+
+    val context = LocalContext.current
+    val permisoNotificacionesLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { /* el usuario decide; si rechaza, no insistimos */ }
+
+    LaunchedEffect(Unit) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
+                PackageManager.PERMISSION_GRANTED
+        ) {
+            permisoNotificacionesLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
 
     Scaffold(
         topBar = {

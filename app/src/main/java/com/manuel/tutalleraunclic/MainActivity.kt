@@ -8,14 +8,17 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.runtime.*
+import androidx.lifecycle.lifecycleScope
 import com.manuel.tutalleraunclic.core.navigation.AppRoot
 import com.manuel.tutalleraunclic.core.navigation.resolveHomeRoute
 import com.manuel.tutalleraunclic.core.navigation.Routes
 import com.manuel.tutalleraunclic.data.local.TokenManager
+import com.manuel.tutalleraunclic.data.repository.MainRepository
 import com.manuel.tutalleraunclic.ui.components.SplashScreen
 import com.manuel.tutalleraunclic.ui.theme.TuTallerAUnClicTheme
 import com.manuel.tutalleraunclic.viewmodel.ThemeViewModel
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -23,6 +26,9 @@ class MainActivity : ComponentActivity() {
 
     @Inject
     lateinit var tokenManager: TokenManager
+
+    @Inject
+    lateinit var mainRepository: MainRepository
 
     private val themeViewModel: ThemeViewModel by viewModels()
 
@@ -40,6 +46,9 @@ class MainActivity : ComponentActivity() {
             ) {
                 var showSplash by remember { mutableStateOf(true) }
                 val isLoggedIn = remember { tokenManager.hasValidSession() }
+                LaunchedEffect(isLoggedIn) {
+                    if (isLoggedIn) mainRepository.registrarTokenFcm()
+                }
                 val startRoute = when {
                     !isLoggedIn -> Routes.LOGIN
                     tokenManager.getRolNombre()?.lowercase()?.trim() == "empresa" -> Routes.EMPRESA_HOME

@@ -3,6 +3,7 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("kotlin-kapt")
     id("com.google.dagger.hilt.android")
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -60,7 +61,9 @@ dependencies {
 
     implementation("com.google.android.gms:play-services-auth:21.0.0")
 
-    implementation("com.google.firebase:firebase-messaging:23.4.0")
+    // 🔥 FIREBASE (BOM: fija versiones compatibles entre sí, sin clavar cada artefacto)
+    implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
+    implementation("com.google.firebase:firebase-messaging")
 
     // 🔥 BOM (UNA SOLA VEZ)
     implementation(platform("androidx.compose:compose-bom:2024.04.01"))

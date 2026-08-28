@@ -20,9 +20,14 @@ class AuthRepository @Inject constructor(
 
             if (response.isSuccessful) {
                 val body = response.body()!!
+                val access = body.access
+                val refresh = body.refresh
+                if (access == null || refresh == null) {
+                    return Result.failure(Exception("Respuesta de login inválida"))
+                }
 
                 // 🔥 Guardar tokens correctamente
-                tokenManager.saveTokens(body.access, body.refresh)
+                tokenManager.saveTokens(access, refresh)
 
                 Result.success(Unit)
 

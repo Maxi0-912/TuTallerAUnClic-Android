@@ -70,8 +70,9 @@ fun LoginScreen(
     LaunchedEffect(uiState) {
         when (uiState) {
             is LoginUiState.NeedsRolSelection -> {
+                // Sin popUpTo: Login queda en el backstack para que el back
+                // del selector de rol cancele y vuelva acá naturalmente.
                 navController.navigate(Routes.SELECCIONAR_ROL) {
-                    popUpTo(Routes.LOGIN) { inclusive = true }
                     launchSingleTop = true
                 }
             }
