@@ -28,6 +28,8 @@ android {
 
     buildTypes {
         release {
+            // Nunca depurable: este es el APK/AAB que se entrega a usuarios y a QA.
+            isDebuggable = false
             isMinifyEnabled = false // luego lo activas en producción real
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
