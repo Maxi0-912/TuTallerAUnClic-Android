@@ -23,7 +23,13 @@ android {
         // Emulador → "http://10.0.2.2:8000/"
         // Dispositivo físico (misma red) → "http://192.168.X.X:8000/"
         // Producción → "https://tu-dominio.com/"
-        buildConfigField("String", "BASE_URL", "\"https://backendfull-production-d0b9.up.railway.app/\"")
+        // URL del backend. Por defecto produccion; para otro servidor (p. ej. Tecnoparque):
+        //   ./gradlew assembleRelease -PAPI_BASE_URL=http://IP:8000/
+        val apiBaseUrl = (project.findProperty("API_BASE_URL") as String?)
+            ?: "https://backendfull-production-d0b9.up.railway.app/"
+        buildConfigField("String", "BASE_URL", "\"$apiBaseUrl\"")
+        // http sin cifrar solo se permite si la URL elegida es http://
+        manifestPlaceholders["permitirHttp"] = apiBaseUrl.startsWith("http://").toString()
     }
 
     buildTypes {
